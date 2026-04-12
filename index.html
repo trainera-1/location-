@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>نظام الملاحة الذكي - الكلية التقنية بالقريات</title>
+    <title>دليل المتدرب الذكي - الكلية التقنية بالقريات</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { --primary: #004a80; --blue-gps: #2196F3; --accent: #ffd700; --danger: #e74c3c; --success: #27ae60; }
@@ -37,10 +37,9 @@
             background: white; padding: 20px; border-radius: 15px;
             z-index: 1000; display: none; text-align: center;
             border-bottom: 6px solid var(--primary); box-shadow: 0 -5px 25px rgba(0,0,0,0.3);
-            transition: 0.3s;
         }
 
-        .error-card { border-bottom: 6px solid var(--danger); }
+        .error-card { border-bottom: 6px solid var(--danger); color: var(--danger); }
         .info-card h3 { margin: 0; color: var(--primary); font-size: 1.2rem; }
         .dest-detail { background: #f0f7ff; padding: 10px; border-radius: 8px; color: var(--blue-gps); font-weight: bold; margin-top: 10px; }
         .special-note { color: #e67e22; font-weight: bold; font-size: 0.9rem; margin-top: 5px; display: block; }
@@ -71,14 +70,14 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     const buildings = {
-        "1": { name: "مبنى 1 - مبنى الأنشطة والمسرح", coords: [31.3885802, 37.3098097], desc: "المسرح الرئيسي وقاعات الأنشطة الفعاليات." },
-        "2": { name: "مبنى 2 - قسم الدعم الفني وأنظمة الشبكات", coords: [31.3884981, 37.3106472], desc: "معامل الحاسب الآلي وصيانة الشبكات." },
-        "3": { name: "مبنى 3 - قسم الدراسات العامة والمحاسبة", coords: [31.3888144, 37.3111052], desc: "قاعات اللغة الإنجليزية والرياضيات والمحاسبة." },
-        "4": { name: "مبنى 4 - الكافتيريا", coords: [31.3892940, 37.3111964], desc: "منطقة الخدمات الغذائية (فطور وبوفيه)." },
-        "5": { name: "مبنى 5 - المصلى", coords: [31.3896953, 37.3114700], desc: "جامع الكلية الرئيسي (صلاة ومسجد)." },
-        "6": { name: "مبنى 6 - ورش التقنية الميكانيكية", coords: [31.3903633, 37.3105369], desc: "ورش تخصصية للمحركات والمركبات." },
-        "7": { name: "مبنى 7 - قسم التقنية الميكانيكية", coords: [31.3904349, 37.3098989], desc: "القاعات النظرية والمكاتب الإدارية للقسم." },
-        "8": { name: "مبنى 8 - العمادة", coords: [31.3898115, 37.3093759], desc: "مبنى الإدارة الرئيسي وشؤون المتدربين." }
+        "1": { name: "مبنى 1 - الأنشطة والمسرح", coords: [31.3885802, 37.3098097], desc: "المسرح الرئيسي وقاعات الفعاليات والأنشطة الطلابية." },
+        "2": { name: "مبنى 2 - الدعم الفني والشبكات", coords: [31.3884981, 37.3106472], desc: "معامل الحاسب الآلي، صيانة الشبكات والدعم التقني." },
+        "3": { name: "مبنى 3 - الدراسات العامة والمحاسبة", coords: [31.3888144, 37.3111052], desc: "قاعات اللغة الإنجليزية والرياضيات والمحاسبة." },
+        "4": { name: "مبنى 4 - الكافتيريا", coords: [31.3892940, 37.3111964], desc: "منطقة الخدمات الغذائية (فطور وبوفيه الكلية)." },
+        "5": { name: "مبنى 5 - المصلى", coords: [31.3896953, 37.3114700], desc: "جامع الكلية الرئيسي (مسجد وصلاة)." },
+        "6": { name: "مبنى 6 - ورش التقنية الميكانيكية", coords: [31.3903633, 37.3105369], desc: "ورش تخصصية لمحركات ومركبات التقنية الميكانيكية." },
+        "7": { name: "مبنى 7 - قسم التقنية الميكانيكية", coords: [31.3904349, 37.3098989], desc: "القاعات النظرية والمكاتب الإدارية لقسم الميكانيكا." },
+        "8": { name: "مبنى 8 - العمادة", coords: [31.3898115, 37.3093759], desc: "مبنى الإدارة الرئيسي، مكتب العميد، وشؤون المتدربين." }
     };
 
     const keywordMap = {
@@ -110,7 +109,6 @@
         let val = e.target.value.trim().toUpperCase();
         const card = document.getElementById('infoCard');
         
-        // 1. البحث بالكلمات المفتاحية
         for (let keyword in keywordMap) {
             if (val.includes(keyword.toUpperCase())) {
                 executeSearch(keywordMap[keyword], "keyword", keyword);
@@ -118,28 +116,24 @@
             }
         }
 
-        // 2. البحث بالأكواد (10 خانات)
         if (val.length === 10) {
-            const lastChar = val.charAt(9);
-            const isWorkshop = isNaN(lastChar); // إذا كان ينتهي بحرف فهو ورشة
-
             const bId = val[4]; 
-            const floorDigit6 = val[5]; // الرقم السادس
-            const floorDigit7 = val[6]; // الرقم السابع (لأكواد الورش)
-            const floorDigit8 = val[7]; // الرقم الثامن (للتأكد في القاعات العادية)
+            const floorDigit = val[5]; // الرقم السادس للدور
+            const lastChar = val.charAt(9);
+            const isWorkshop = isNaN(lastChar); 
 
             if (isWorkshop) {
-                // منطق الورش: الرقم 6 و 7 هما الدور
-                // عادة يكونان متطابقين (مثل 11) ليدلا على الدور الأول
-                const workshopFloor = floorDigit6; 
-                executeSearch(bId, "workshop", { floor: workshopFloor, room: val.substring(7) });
+                // نظام الورش: آخر 4 خانات (من 6 إلى 9) هي كود الورشة
+                const workshopCode = val.substring(6); 
+                executeSearch(bId, "workshop", { floor: floorDigit, room: workshopCode });
             } else {
-                // منطق القاعات العادية: التأكد من تطابق 6 مع 8
-                if (floorDigit6 !== floorDigit8) {
+                // نظام القاعات: التأكد من تطابق 6 مع 8، وآخر 3 خانات هي كود القاعة
+                if (floorDigit !== val[7]) {
                     showError("رقم غير متناسق! الدور (الرقم 6) يجب أن يطابق فئة القاعة (الرقم 8).");
                     return;
                 }
-                executeSearch(bId, "code", { floor: floorDigit6, room: val.substring(7) });
+                const roomCode = val.substring(7);
+                executeSearch(bId, "code", { floor: floorDigit, room: roomCode });
             }
         } else {
             card.style.display = 'none';
@@ -182,7 +176,7 @@
         card.style.display = 'block';
         document.getElementById('bldgName').innerText = "تنبيه بالنظام!";
         document.getElementById('bldgDesc').innerText = msg;
-        document.getElementById('targetDetail').innerHTML = "يرجى مراجعة الجدول أو التأكد من الرقم.";
+        document.getElementById('targetDetail').innerHTML = "يرجى التأكد من الرقم المدخل.";
         document.getElementById('specialNote').innerText = "";
     }
 
@@ -190,7 +184,7 @@
         if (routeLine) map.removeLayer(routeLine);
         routeLine = L.polyline([start, end], { color: '#2196F3', weight: 6, opacity: 0.7, dashArray: '10, 15' }).addTo(map);
         const dist = map.distance(start, end).toFixed(0);
-        document.getElementById('distanceText').innerText = `المسافة: ${dist} متر`;
+        document.getElementById('distanceText').innerText = `المسافة المتبقية: ${dist} متر`;
     }
 </script>
 </body>
