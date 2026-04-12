@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>دليل المتدرب الذكي - الكلية التقنية بالقريات</title>
+    <title>نظام الملاحة الذكي - الكلية التقنية بالقريات</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root { --primary: #004a80; --blue-gps: #2196F3; --accent: #ffd700; --success: #27ae60; }
+        :root { --primary: #004a80; --blue-gps: #2196F3; --accent: #ffd700; --danger: #e74c3c; --success: #27ae60; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, sans-serif; background: #000; }
         
         .search-nav {
@@ -37,140 +37,161 @@
             background: white; padding: 20px; border-radius: 15px;
             z-index: 1000; display: none; text-align: center;
             border-bottom: 6px solid var(--primary); box-shadow: 0 -5px 25px rgba(0,0,0,0.3);
-            animation: slideUp 0.3s ease-out;
+            transition: 0.3s;
         }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        
+
+        .error-card { border-bottom: 6px solid var(--danger); }
         .info-card h3 { margin: 0; color: var(--primary); font-size: 1.2rem; }
-        .info-card p { margin: 10px 0; color: #555; font-size: 0.95rem; line-height: 1.4; }
-        .dest-detail { background: #f0f7ff; padding: 10px; border-radius: 8px; color: var(--blue-gps); font-weight: bold; }
+        .dest-detail { background: #f0f7ff; padding: 10px; border-radius: 8px; color: var(--blue-gps); font-weight: bold; margin-top: 10px; }
         .special-note { color: #e67e22; font-weight: bold; font-size: 0.9rem; margin-top: 5px; display: block; }
     </style>
 </head>
 <body>
 
 <div class="search-nav">
-    <input type="text" id="roomInput" placeholder="رقم القاعة أو (كافتيريا، مصلى، عمادة...)" maxlength="20">
+    <input type="text" id="roomInput" placeholder="رقم القاعة، الورشة، أو (كافتيريا، عمادة...)" maxlength="10">
     <div id="statusMsg" style="margin-top: 5px; font-size: 0.8rem; text-align: center; color: #888;"></div>
 </div>
 
 <div class="info-card" id="infoCard">
     <h3 id="bldgName"></h3>
-    <p id="bldgDesc"></p>
+    <p id="bldgDesc" style="margin: 10px 0; color: #555; font-size: 0.95rem;"></p>
     <div class="dest-detail" id="targetDetail"></div>
     <div id="specialNote" class="special-note"></div>
     <div id="distanceText" style="margin-top:8px; font-size: 0.85rem; color: #27ae60;"></div>
 </div>
 
 <div class="controls">
-    <button class="btn-action" onclick="enableLiveTracking()" title="تفعيل تتبع الموقع">🎯</button>
-    <button class="btn-action" onclick="location.reload()" title="إعادة تشغيل">🔄</button>
+    <button class="btn-action" onclick="enableLiveTracking()">🎯</button>
+    <button class="btn-action" onclick="location.reload()">🔄</button>
 </div>
 
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // الإحداثيات الدقيقة التي زودتنا بها
     const buildings = {
-        "1": { name: "مبنى 1 - مبنى الأنشطة والمسرح", coords: [31.3885802, 37.3098097], desc: "يضم المسرح الرئيسي وقاعات الأنشطة الطلابية والفعاليات." },
+        "1": { name: "مبنى 1 - مبنى الأنشطة والمسرح", coords: [31.3885802, 37.3098097], desc: "المسرح الرئيسي وقاعات الأنشطة الفعاليات." },
         "2": { name: "مبنى 2 - قسم الدعم الفني وأنظمة الشبكات", coords: [31.3884981, 37.3106472], desc: "معامل الحاسب الآلي وصيانة الشبكات." },
         "3": { name: "مبنى 3 - قسم الدراسات العامة والمحاسبة", coords: [31.3888144, 37.3111052], desc: "قاعات اللغة الإنجليزية والرياضيات والمحاسبة." },
-        "4": { name: "مبنى 4 - الكافتيريا", coords: [31.3892940, 37.3111964], desc: "منطقة الخدمات الغذائية (مطعم وبوفيه الكلية)." },
-        "5": { name: "مبنى 5 - المصلى", coords: [31.3896953, 37.3114700], desc: "جامع الكلية الرئيسي." },
+        "4": { name: "مبنى 4 - الكافتيريا", coords: [31.3892940, 37.3111964], desc: "منطقة الخدمات الغذائية (فطور وبوفيه)." },
+        "5": { name: "مبنى 5 - المصلى", coords: [31.3896953, 37.3114700], desc: "جامع الكلية الرئيسي (صلاة ومسجد)." },
         "6": { name: "مبنى 6 - ورش التقنية الميكانيكية", coords: [31.3903633, 37.3105369], desc: "ورش تخصصية للمحركات والمركبات." },
-        "7": { name: "مبنى 7 - قسم التقنية الميكانيكية", coords: [31.3904349, 37.3098989], desc: "القاعات النظرية والمكاتب الإدارية لقسم الميكانيكا." },
-        "8": { name: "مبنى 8 - العمادة", coords: [31.3898115, 37.3093759], desc: "مبنى الإدارة الرئيسي ومكتب العميد وشؤون المتدربين." }
+        "7": { name: "مبنى 7 - قسم التقنية الميكانيكية", coords: [31.3904349, 37.3098989], desc: "القاعات النظرية والمكاتب الإدارية للقسم." },
+        "8": { name: "مبنى 8 - العمادة", coords: [31.3898115, 37.3093759], desc: "مبنى الإدارة الرئيسي وشؤون المتدربين." }
     };
 
-    // قاموس الكلمات المفتاحية
     const keywordMap = {
         "كافتيريا": "4", "مطعم": "4", "بوفية": "4", "فطور": "4", "بوفيه": "4",
         "مصلى": "5", "صلاة": "5", "مسجد": "5", "جامع": "5",
-        "شؤون المتدربين": "8", "العمادة": "8", "العميد": "8", "شؤون": "8", "شئون": "8",
-        "الأنشطة": "1", "المسرح": "1", "فعاليات": "1", "انشطة": "1"
+        "شؤون": "8", "شئون": "8", "العمادة": "8", "العميد": "8",
+        "الأنشطة": "1", "المسرح": "1", "فعاليات": "1"
     };
 
     const map = L.map('map', { zoomControl: false }).setView([31.3893496, 37.3102727], 18);
-
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 20 }).addTo(map);
 
     let userMarker, destMarker, routeLine;
 
     function enableLiveTracking() {
         if (!navigator.geolocation) return;
-        navigator.geolocation.watchPosition(updateUserMarker, (err) => {}, { enableHighAccuracy: true, maximumAge: 0 });
+        navigator.geolocation.watchPosition(updateUserMarker, (err) => {}, { enableHighAccuracy: true });
         document.getElementById('statusMsg').innerText = "التتبع المباشر مفعل 🛰️";
     }
 
     function updateUserMarker(pos) {
         const p = [pos.coords.latitude, pos.coords.longitude];
-        if (!userMarker) {
-            userMarker = L.circleMarker(p, { radius: 10, color: 'white', weight: 3, fillColor: '#2196F3', fillOpacity: 1 }).addTo(map);
-        } else { userMarker.setLatLng(p); }
+        if (!userMarker) userMarker = L.circleMarker(p, { radius: 10, color: 'white', weight: 3, fillColor: '#2196F3', fillOpacity: 1 }).addTo(map);
+        else userMarker.setLatLng(p);
         if (destMarker) updateNavigation(p, destMarker.getLatLng());
     }
 
-    // محرك البحث المطور
     document.getElementById('roomInput').addEventListener('input', function(e) {
-        let val = e.target.value.trim();
+        let val = e.target.value.trim().toUpperCase();
+        const card = document.getElementById('infoCard');
         
-        // أولاً: التحقق إذا كان المدخل كلمة مفتاحية
+        // 1. البحث بالكلمات المفتاحية
         for (let keyword in keywordMap) {
-            if (val.includes(keyword)) {
+            if (val.includes(keyword.toUpperCase())) {
                 executeSearch(keywordMap[keyword], "keyword", keyword);
                 return;
             }
         }
 
-        // ثانياً: التحقق إذا كان المدخل كود من 10 خانات
+        // 2. البحث بالأكواد (10 خانات)
         if (val.length === 10) {
-            executeSearch(val[4], "code", val);
+            const lastChar = val.charAt(9);
+            const isWorkshop = isNaN(lastChar); // إذا كان ينتهي بحرف فهو ورشة
+
+            const bId = val[4]; 
+            const floorDigit6 = val[5]; // الرقم السادس
+            const floorDigit7 = val[6]; // الرقم السابع (لأكواد الورش)
+            const floorDigit8 = val[7]; // الرقم الثامن (للتأكد في القاعات العادية)
+
+            if (isWorkshop) {
+                // منطق الورش: الرقم 6 و 7 هما الدور
+                // عادة يكونان متطابقين (مثل 11) ليدلا على الدور الأول
+                const workshopFloor = floorDigit6; 
+                executeSearch(bId, "workshop", { floor: workshopFloor, room: val.substring(7) });
+            } else {
+                // منطق القاعات العادية: التأكد من تطابق 6 مع 8
+                if (floorDigit6 !== floorDigit8) {
+                    showError("رقم غير متناسق! الدور (الرقم 6) يجب أن يطابق فئة القاعة (الرقم 8).");
+                    return;
+                }
+                executeSearch(bId, "code", { floor: floorDigit6, room: val.substring(7) });
+            }
+        } else {
+            card.style.display = 'none';
         }
     });
 
-    function executeSearch(bId, type, originalVal) {
+    function executeSearch(bId, type, data) {
         const target = buildings[bId];
+        const card = document.getElementById('infoCard');
         if (!target) return;
 
+        card.classList.remove('error-card');
+        card.style.display = 'block';
         if (destMarker) map.removeLayer(destMarker);
         destMarker = L.marker(target.coords).addTo(map).bindPopup(target.name).openPopup();
         map.flyTo(target.coords, 19);
 
-        document.getElementById('infoCard').style.display = 'block';
         document.getElementById('bldgName').innerText = target.name;
         document.getElementById('bldgDesc').innerText = target.desc;
-        
-        const detailEl = document.getElementById('targetDetail');
         const noteEl = document.getElementById('specialNote');
-        noteEl.innerText = ""; // إعادة تعيين الملاحظة
+        const detailEl = document.getElementById('targetDetail');
+        
+        noteEl.innerText = (bId === "8") ? "⚠️ ملاحظة: مكتب شؤون المتدربين يقع في الدور الأول." : "";
 
-        if (type === "code") {
-            const floorId = originalVal[5];
-            const roomCode = originalVal.substring(7);
-            let floorName = floorId === '0' ? "الدور الأرضي" : (floorId === '1' ? "الدور الأول" : "الدور " + floorId);
-            const label = isNaN(roomCode) ? "الورشة" : "القاعة";
-            detailEl.innerHTML = `📌 توجه إلى <b>${floorName}</b> — ${label} رقم <b>${roomCode}</b>`;
+        if (type === "workshop" || type === "code") {
+            let fName = data.floor === '0' ? "الأرضي" : (data.floor === '1' ? "الأول" : "الثاني");
+            let label = (type === "workshop") ? "الورشة" : "القاعة";
+            detailEl.innerHTML = `📌 توجه إلى <b>${fName}</b> — ${label} رقم <b>${data.room}</b>`;
         } else {
-            detailEl.innerHTML = `📍 لقد بحثت عن: <b>${originalVal}</b>`;
-        }
-
-        // إضافة ملاحظة شؤون المتدربين الخاصة بمبنى 8
-        if (bId === "8") {
-            noteEl.innerText = "⚠️ ملاحظة: مكتب شؤون المتدربين يقع في الدور الأول.";
+            detailEl.innerHTML = `📍 وجهة الخدمات: <b>${data}</b>`;
         }
 
         if (userMarker) updateNavigation(userMarker.getLatLng(), target.coords);
         else enableLiveTracking();
     }
 
+    function showError(msg) {
+        const card = document.getElementById('infoCard');
+        card.classList.add('error-card');
+        card.style.display = 'block';
+        document.getElementById('bldgName').innerText = "تنبيه بالنظام!";
+        document.getElementById('bldgDesc').innerText = msg;
+        document.getElementById('targetDetail').innerHTML = "يرجى مراجعة الجدول أو التأكد من الرقم.";
+        document.getElementById('specialNote').innerText = "";
+    }
+
     function updateNavigation(start, end) {
         if (routeLine) map.removeLayer(routeLine);
         routeLine = L.polyline([start, end], { color: '#2196F3', weight: 6, opacity: 0.7, dashArray: '10, 15' }).addTo(map);
-        const distance = map.distance(start, end).toFixed(0);
-        document.getElementById('distanceText').innerText = `المسافة المتبقية: ${distance} متر`;
+        const dist = map.distance(start, end).toFixed(0);
+        document.getElementById('distanceText').innerText = `المسافة: ${dist} متر`;
     }
 </script>
-
 </body>
 </html>
