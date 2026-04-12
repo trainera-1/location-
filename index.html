@@ -3,130 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام الملاحة - الكلية التقنية بالقريات</title>
+    <title>نظام الملاحة الذكي - الكلية التقنية بالقريات</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root { --primary: #004a80; --accent: #27ae60; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; }
+        :root { --primary: #004a80; --accent: #2196F3; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
         
-        /* واجهة البحث العلوي */
+        /* واجهة البحث */
         .search-nav {
-            position: absolute; top: 10px; left: 10px; right: 10px;
-            z-index: 1000; background: white; padding: 10px;
-            border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            display: flex; flex-direction: column; gap: 8px;
+            position: absolute; top: 15px; left: 10px; right: 10px;
+            z-index: 1000; background: white; padding: 12px;
+            border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column; gap: 10px;
         }
-        input { padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; text-align: center; }
+        input { padding: 14px; border: 2px solid #eee; border-radius: 8px; font-size: 1.1rem; text-align: center; font-weight: bold; }
+        input:focus { border-color: var(--primary); outline: none; }
         
-        #map { height: 100vh; width: 100%; }
+        #map { height: 100vh; width: 100%; background: #222; }
 
-        /* زر الموقع الحالي */
-        .locate-btn {
+        /* أزرار التحكم */
+        .controls {
             position: absolute; bottom: 30px; right: 20px; z-index: 1000;
-            background: white; border: none; width: 50px; height: 50px;
-            border-radius: 50%; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column; gap: 15px;
+        }
+        .btn-round {
+            background: white; border: none; width: 55px; height: 55px;
+            border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center;
         }
 
-        .info-panel {
-            position: absolute; bottom: 100px; left: 10px; right: 10px;
-            background: white; padding: 15px; border-radius: 8px;
-            z-index: 1000; display: none; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        .status-bar {
+            position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 74, 128, 0.9); color: white; padding: 10px 20px;
+            border-radius: 25px; z-index: 1000; display: none; font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
 
 <div class="search-nav">
-    <input type="text" id="roomSearch" placeholder="أدخل رقم القاعة (10 أرقام)..." maxlength="10">
-    <div id="status" style="font-size: 0.8rem; color: var(--primary); font-weight: bold; text-align: center;"></div>
+    <input type="text" id="roomSearch" placeholder="أدخل رقم القاعة المكون من 10 أرقام" maxlength="10">
+    <div id="targetInfo" style="text-align: center; color: var(--primary); font-weight: bold; font-size: 0.9rem;"></div>
 </div>
 
-<button class="locate-btn" onclick="locateUser()">🎯</button>
+<div class="status-bar" id="statusBar">جاري تحديد مسار الملاحة...</div>
 
-<div class="info-panel" id="infoPanel"></div>
+<div class="controls">
+    <button class="btn-round" onclick="locateUser()" title="موقعي الحالي">🎯</button>
+    <button class="btn-round" onclick="resetMap()" title="إعادة تعيين">🔄</button>
+</div>
 
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // 1. تحديد موقع الكلية التقنية بالقريات (إحداثيات حقيقية تقريبية)
-    const collegeCenter = [31.3341, 37.3197]; 
-    
-    // 2. تشغيل الخريطة (أقمار صناعية)
-    const map = L.map('map').setView(collegeCenter, 17);
+    // الإحداثيات المركزية للكلية التقنية بالقريات (حي الأمل)
+    const collegeLat = 31.334150;
+    const collegeLng = 37.348420;
 
-    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Esri, DigitalGlobe, GeoEye, Earthstar Geographics'
+    // تهيئة الخريطة على وضع الأقمار الصناعية
+    const map = L.map('map', { zoomControl: false }).setView([collegeLat, collegeLng], 17);
+
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19
     }).addTo(map);
 
-    // 3. قاعدة بيانات المباني (إحداثيات دقيقة داخل الكلية)
+    // قاعدة بيانات المباني موزعة إحداثياً بناءً على المخطط الدائري
     const buildings = {
-        "1": { name: "مبنى 1 - قاعات", coords: [31.3335, 37.3205] },
-        "2": { name: "مبنى 2 - مختبرات", coords: [31.3340, 37.3210] },
-        "3": { name: "مبنى 3 - ورش ميكانيكا", coords: [31.3345, 37.3208] },
-        "4": { name: "مبنى 4 - الكافتيريا", coords: [31.3348, 37.3197] },
-        "5": { name: "مبنى 5 - المصلى", coords: [31.3350, 37.3190] },
-        "6": { name: "مبنى 6 - قاعات", coords: [31.3345, 37.3185] },
-        "7": { name: "مبنى 7 - قاعات", coords: [31.3338, 37.3188] },
-        "8": { name: "مبنى 8 - الإدارة", coords: [31.3332, 37.3195] }
+        "1": { name: "مبنى 1 - قاعات دراسية", coords: [31.3336, 37.3495] },
+        "2": { name: "مبنى 2 - مختبرات", coords: [31.3342, 37.3498] },
+        "3": { name: "مبنى 3 - مختبرات متخصصة", coords: [31.3348, 37.3494] },
+        "4": { name: "مبنى 4 - الكافتيريا", coords: [31.3352, 37.3485] },
+        "5": { name: "مبنى 5 - المصلى", coords: [31.3350, 37.3475] },
+        "6": { name: "مبنى 6 - قاعات دراسية", coords: [31.3345, 37.3471] },
+        "7": { name: "مبنى 7 - قاعات دراسية", coords: [31.3338, 37.3473] },
+        "8": { name: "مبنى 8 - العمادة", coords: [31.3334, 37.3484] }
     };
 
-    let userMarker, routingLine;
+    let userMarker, routingLine, destMarker;
 
-    // 4. خوارزمية البحث وفك التشفير
+    // فك تشفير رقم القاعة
     document.getElementById('roomSearch').addEventListener('input', function(e) {
         let val = e.target.value;
         if(val.length === 10) {
-            const bId = val[4]; // الرقم الخامس
-            const room = val.substring(7);
-            const target = buildings[bId];
+            const bId = val[4]; // الرقم الخامس للمبنى
+            const room = val.substring(7); // آخر 3 أرقام للقاعة
+            const bInfo = buildings[bId];
 
-            if(target) {
-                showDestination(target, room);
+            if(bInfo) {
+                navigateToBldg(bInfo, room);
             } else {
-                document.getElementById('status').innerText = "المبنى غير معرف!";
+                alert("رقم المبنى غير صحيح في النظام");
             }
         }
     });
 
-    function showDestination(bldg, room) {
-        // تنظيف الخريطة
-        if(window.destMarker) map.removeLayer(window.destMarker);
+    function navigateToBldg(bldg, room) {
+        if(destMarker) map.removeLayer(destMarker);
         
-        window.destMarker = L.marker(bldg.coords).addTo(map)
+        destMarker = L.marker(bldg.coords).addTo(map)
             .bindPopup(`<b>${bldg.name}</b><br>القاعة: ${room}`).openPopup();
         
         map.flyTo(bldg.coords, 19);
-        document.getElementById('status').innerText = `تم تحديد الوجهة: ${bldg.name}`;
+        document.getElementById('targetInfo').innerText = `المبنى المستهدف: ${bldg.name}`;
         
         if(userMarker) drawPath(userMarker.getLatLng(), bldg.coords);
     }
 
-    // 5. تحديد موقع المتدرب الفعلي (GPS)
+    // تحديد الموقع الفعلي للمتدرب (GPS)
     function locateUser() {
         map.locate({setView: true, maxZoom: 18, watch: true});
     }
 
     map.on('locationfound', function(e) {
+        const radius = e.accuracy / 2;
         if (userMarker) map.removeLayer(userMarker);
         
-        // أيقونة النقطة الزرقاء مثل قوقل ماب
         userMarker = L.circleMarker(e.latlng, {
-            radius: 8, fillOpacity: 1, color: 'white', weight: 2, fillColor: '#2196F3'
-        }).addTo(map);
+            radius: 9, fillOpacity: 1, color: 'white', weight: 3, fillColor: '#2196F3'
+        }).addTo(map).bindTooltip("أنت هنا").openTooltip();
 
-        document.getElementById('status').innerText = "تم تحديد موقعك بدقة";
+        if(destMarker) drawPath(e.latlng, destMarker.getLatLng());
     });
 
-    map.on('locationerror', function() {
-        alert("يرجى تفعيل خدمة الموقع (GPS) للسماح للموقع بتوجيهك.");
-    });
-
-    // 6. رسم خط توجيهي (مثل قوقل ماب)
     function drawPath(start, end) {
         if(routingLine) map.removeLayer(routingLine);
-        routingLine = L.polyline([start, end], {color: '#2196F3', weight: 5, opacity: 0.6, dashArray: '10, 10'}).addTo(map);
+        routingLine = L.polyline([start, end], {
+            color: '#2196F3', weight: 6, opacity: 0.7, dashArray: '10, 15', lineCap: 'round'
+        }).addTo(map);
+        document.getElementById('statusBar').style.display = 'block';
+    }
+
+    function resetMap() {
+        location.reload();
     }
 </script>
 
