@@ -2,140 +2,149 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام الملاحة الذكي - الكلية التقنية بالقريات</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>نظام الملاحة الدقيق - كلية القريات</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root { --primary: #004a80; --accent: #2196F3; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        :root { --primary: #004a80; --blue-gps: #2196F3; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; background: #000; }
         
-        /* واجهة البحث */
-        .search-nav {
-            position: absolute; top: 15px; left: 10px; right: 10px;
-            z-index: 1000; background: white; padding: 12px;
-            border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            display: flex; flex-direction: column; gap: 10px;
+        /* واجهة البحث العلوي */
+        .nav-header {
+            position: absolute; top: 10px; left: 10px; right: 10px; z-index: 1000;
+            background: white; padding: 15px; border-radius: 15px;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.4);
         }
-        input { padding: 14px; border: 2px solid #eee; border-radius: 8px; font-size: 1.1rem; text-align: center; font-weight: bold; }
-        input:focus { border-color: var(--primary); outline: none; }
-        
-        #map { height: 100vh; width: 100%; background: #222; }
+        input {
+            width: 100%; padding: 15px; border: 2px solid #eee; border-radius: 10px;
+            font-size: 1.2rem; text-align: center; font-weight: bold; box-sizing: border-box;
+        }
 
-        /* أزرار التحكم */
-        .controls {
+        #map { height: 100vh; width: 100%; }
+
+        /* زر الملاحة الملوّن */
+        .nav-btn {
             position: absolute; bottom: 30px; right: 20px; z-index: 1000;
-            display: flex; flex-direction: column; gap: 15px;
-        }
-        .btn-round {
-            background: white; border: none; width: 55px; height: 55px;
-            border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center;
+            background: white; border: none; width: 65px; height: 65px;
+            border-radius: 50%; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: pointer;
         }
 
-        .status-bar {
-            position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
-            background: rgba(0, 74, 128, 0.9); color: white; padding: 10px 20px;
-            border-radius: 25px; z-index: 1000; display: none; font-size: 0.9rem;
+        .instruction-box {
+            position: absolute; bottom: 110px; left: 15px; right: 15px;
+            background: rgba(255, 255, 255, 0.95); padding: 15px; border-radius: 12px;
+            z-index: 1000; display: none; text-align: center; border-bottom: 4px solid var(--blue-gps);
         }
     </style>
 </head>
 <body>
 
-<div class="search-nav">
-    <input type="text" id="roomSearch" placeholder="أدخل رقم القاعة المكون من 10 أرقام" maxlength="10">
-    <div id="targetInfo" style="text-align: center; color: var(--primary); font-weight: bold; font-size: 0.9rem;"></div>
+<div class="nav-header">
+    <input type="text" id="roomInput" placeholder="أدخل رقم القاعة (10 أرقام)" pattern="\d*">
+    <div id="status" style="margin-top: 8px; color: var(--primary); font-size: 0.9rem; font-weight: bold; text-align: center;"></div>
 </div>
 
-<div class="status-bar" id="statusBar">جاري تحديد مسار الملاحة...</div>
-
-<div class="controls">
-    <button class="btn-round" onclick="locateUser()" title="موقعي الحالي">🎯</button>
-    <button class="btn-round" onclick="resetMap()" title="إعادة تعيين">🔄</button>
+<div class="instruction-box" id="guide">
+    <b id="targetName"></b><br>
+    <span id="distText">جاري حساب المسافة...</span>
 </div>
+
+<button class="nav-btn" onclick="startNavigation()">🚀</button>
 
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // الإحداثيات المركزية للكلية التقنية بالقريات (حي الأمل)
-    const collegeLat = 31.334150;
-    const collegeLng = 37.348420;
+    // إحداثيات الكلية التقنية بالقريات - حي الأمل
+    const collegeLoc = [31.33415, 37.34842];
+    
+    // إعداد الخريطة
+    const map = L.map('map', { zoomControl: false }).setView(collegeLoc, 18);
 
-    // تهيئة الخريطة على وضع الأقمار الصناعية
-    const map = L.map('map', { zoomControl: false }).setView([collegeLat, collegeLng], 17);
-
+    // طبقة الأقمار الصناعية عالية الوضوح
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 19
+        maxZoom: 20
     }).addTo(map);
 
-    // قاعدة بيانات المباني موزعة إحداثياً بناءً على المخطط الدائري
+    // توزيع المباني (إحداثيات دقيقة فوق المباني)
     const buildings = {
-        "1": { name: "مبنى 1 - قاعات دراسية", coords: [31.3336, 37.3495] },
-        "2": { name: "مبنى 2 - مختبرات", coords: [31.3342, 37.3498] },
-        "3": { name: "مبنى 3 - مختبرات متخصصة", coords: [31.3348, 37.3494] },
-        "4": { name: "مبنى 4 - الكافتيريا", coords: [31.3352, 37.3485] },
-        "5": { name: "مبنى 5 - المصلى", coords: [31.3350, 37.3475] },
-        "6": { name: "مبنى 6 - قاعات دراسية", coords: [31.3345, 37.3471] },
-        "7": { name: "مبنى 7 - قاعات دراسية", coords: [31.3338, 37.3473] },
-        "8": { name: "مبنى 8 - العمادة", coords: [31.3334, 37.3484] }
+        "1": { name: "مبنى 1 - القاعات", pos: [31.33365, 37.34950] },
+        "2": { name: "مبنى 2 - المختبرات", pos: [31.33420, 37.34980] },
+        "3": { name: "مبنى 3 - الورش", pos: [31.33485, 37.34940] },
+        "4": { name: "مبنى 4 - الكافتيريا", pos: [31.33525, 37.34850] },
+        "5": { name: "مبنى 5 - المصلى", pos: [31.33500, 37.34755] },
+        "6": { name: "مبنى 6 - القاعات", pos: [31.33455, 37.34715] },
+        "7": { name: "مبنى 7 - القاعات", pos: [31.33385, 37.34735] },
+        "8": { name: "مبنى 8 - الإدارة", pos: [31.33345, 37.34845] }
     };
 
-    let userMarker, routingLine, destMarker;
+    let userMarker, destMarker, routeLine;
 
-    // فك تشفير رقم القاعة
-    document.getElementById('roomSearch').addEventListener('input', function(e) {
-        let val = e.target.value;
-        if(val.length === 10) {
-            const bId = val[4]; // الرقم الخامس للمبنى
-            const room = val.substring(7); // آخر 3 أرقام للقاعة
-            const bInfo = buildings[bId];
+    // تتبع الموقع بدقة متناهية
+    function startNavigation() {
+        if (!navigator.geolocation) {
+            alert("جوالك لا يدعم نظام تحديد المواقع.");
+            return;
+        }
 
-            if(bInfo) {
-                navigateToBldg(bInfo, room);
-            } else {
-                alert("رقم المبنى غير صحيح في النظام");
+        navigator.geolocation.watchPosition(updateUserPos, handleLocError, {
+            enableHighAccuracy: true, // تفعيل الدقة القصوى (GPS)
+            maximumAge: 0,
+            timeout: 10000
+        });
+        
+        document.getElementById('status').innerText = "جاري التتبع الدقيق عبر الأقمار الصناعية...";
+    }
+
+    function updateUserPos(pos) {
+        const latlng = [pos.coords.latitude, pos.coords.longitude];
+        
+        if (!userMarker) {
+            userMarker = L.circleMarker(latlng, {
+                radius: 10, color: 'white', weight: 3, fillColor: '#2196F3', fillOpacity: 1
+            }).addTo(map);
+        } else {
+            userMarker.setLatLng(latlng);
+        }
+
+        map.setView(latlng, 19); // زوم قريب جداً على المتدرب
+        if (destMarker) updateRoute(latlng, destMarker.getLatLng());
+    }
+
+    // فك التشفير والبحث
+    document.getElementById('roomInput').addEventListener('input', function(e) {
+        if (e.target.value.length === 10) {
+            const bId = e.target.value[4];
+            const target = buildings[bId];
+            if (target) {
+                setDestination(target);
             }
         }
     });
 
-    function navigateToBldg(bldg, room) {
-        if(destMarker) map.removeLayer(destMarker);
+    function setDestination(bldg) {
+        if (destMarker) map.removeLayer(destMarker);
+        destMarker = L.marker(bldg.pos).addTo(map).bindPopup(bldg.name).openPopup();
         
-        destMarker = L.marker(bldg.coords).addTo(map)
-            .bindPopup(`<b>${bldg.name}</b><br>القاعة: ${room}`).openPopup();
+        document.getElementById('guide').style.display = 'block';
+        document.getElementById('targetName').innerText = bldg.name;
         
-        map.flyTo(bldg.coords, 19);
-        document.getElementById('targetInfo').innerText = `المبنى المستهدف: ${bldg.name}`;
-        
-        if(userMarker) drawPath(userMarker.getLatLng(), bldg.coords);
+        if (userMarker) updateRoute(userMarker.getLatLng(), bldg.pos);
+        else startNavigation(); // ابدأ الملاحة فوراً إذا لم تكن مفعلة
     }
 
-    // تحديد الموقع الفعلي للمتدرب (GPS)
-    function locateUser() {
-        map.locate({setView: true, maxZoom: 18, watch: true});
-    }
-
-    map.on('locationfound', function(e) {
-        const radius = e.accuracy / 2;
-        if (userMarker) map.removeLayer(userMarker);
-        
-        userMarker = L.circleMarker(e.latlng, {
-            radius: 9, fillOpacity: 1, color: 'white', weight: 3, fillColor: '#2196F3'
-        }).addTo(map).bindTooltip("أنت هنا").openTooltip();
-
-        if(destMarker) drawPath(e.latlng, destMarker.getLatLng());
-    });
-
-    function drawPath(start, end) {
-        if(routingLine) map.removeLayer(routingLine);
-        routingLine = L.polyline([start, end], {
-            color: '#2196F3', weight: 6, opacity: 0.7, dashArray: '10, 15', lineCap: 'round'
+    function updateRoute(start, end) {
+        if (routeLine) map.removeLayer(routeLine);
+        routeLine = L.polyline([start, end], {
+            color: '#2196F3', weight: 7, opacity: 0.8, lineCap: 'round', dashArray: '1, 12'
         }).addTo(map);
-        document.getElementById('statusBar').style.display = 'block';
+
+        const dist = map.distance(start, end).toFixed(0);
+        document.getElementById('distText').innerText = `المسافة المتبقية: ${dist} متر`;
     }
 
-    function resetMap() {
-        location.reload();
+    function handleLocError(err) {
+        alert("يرجى التأكد من تشغيل الـ GPS في جوالك والسماح للمتصفح بالوصول لموقعك الدقيق.");
     }
 </script>
 
