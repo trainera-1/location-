@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>نظام الملاحة الدقيق - كلية القريات</title>
+    <title>نظام الملاحة الذكي - الكلية التقنية بالقريات</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root { --primary: #004a80; --blue-gps: #2196F3; }
+        :root { --primary: #004a80; --blue-gps: #2196F3; --accent: #ffd700; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; background: #000; }
         
-        /* واجهة البحث العلوي */
+        /* واجهة البحث */
         .nav-header {
             position: absolute; top: 10px; left: 10px; right: 10px; z-index: 1000;
             background: white; padding: 15px; border-radius: 15px;
@@ -22,129 +22,131 @@
 
         #map { height: 100vh; width: 100%; }
 
-        /* زر الملاحة الملوّن */
-        .nav-btn {
-            position: absolute; bottom: 30px; right: 20px; z-index: 1000;
-            background: white; border: none; width: 65px; height: 65px;
+        /* أزرار التحكم */
+        .controls {
+            position: absolute; bottom: 20px; right: 20px; z-index: 1000;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .btn-action {
+            background: white; border: none; width: 60px; height: 60px;
             border-radius: 50%; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 26px; cursor: pointer;
         }
 
+        /* لوحة التوجيه التفصيلي */
         .instruction-box {
-            position: absolute; bottom: 110px; left: 15px; right: 15px;
-            background: rgba(255, 255, 255, 0.95); padding: 15px; border-radius: 12px;
-            z-index: 1000; display: none; text-align: center; border-bottom: 4px solid var(--blue-gps);
+            position: absolute; bottom: 100px; left: 10px; right: 10px;
+            background: white; padding: 18px; border-radius: 12px;
+            z-index: 1000; display: none; text-align: center;
+            border-bottom: 5px solid var(--primary); box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
         }
+        .instruction-box b { color: var(--primary); font-size: 1.1rem; }
     </style>
 </head>
 <body>
 
 <div class="nav-header">
     <input type="text" id="roomInput" placeholder="أدخل رقم القاعة (10 أرقام)" pattern="\d*">
-    <div id="status" style="margin-top: 8px; color: var(--primary); font-size: 0.9rem; font-weight: bold; text-align: center;"></div>
+    <div id="status" style="margin-top: 8px; color: var(--primary); font-size: 0.85rem; text-align: center;"></div>
 </div>
 
-<div class="instruction-box" id="guide">
-    <b id="targetName"></b><br>
-    <span id="distText">جاري حساب المسافة...</span>
+<div class="instruction-box" id="guideBox">
+    <div id="targetText"></div>
+    <div id="stepDetail" style="margin-top:8px; color: #555; font-size: 0.95rem;"></div>
+    <div id="distText" style="margin-top:5px; color: var(--blue-gps); font-weight: bold;"></div>
 </div>
 
-<button class="nav-btn" onclick="startNavigation()">🚀</button>
+<div class="controls">
+    <button class="btn-action" onclick="startTracking()" title="تفعيل الملاحة">🚀</button>
+    <button class="btn-action" onclick="location.reload()" title="تحديث">🔄</button>
+</div>
 
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // إحداثيات الكلية التقنية بالقريات - حي الأمل
-    const collegeLoc = [31.33415, 37.34842];
-    
-    // إعداد الخريطة
-    const map = L.map('map', { zoomControl: false }).setView(collegeLoc, 18);
+    // الإحداثيات الدقيقة التي زودتني بها (مركز الكلية)
+    const centerLat = 31.3893496;
+    const centerLng = 37.3102727;
 
-    // طبقة الأقمار الصناعية عالية الوضوح
+    const map = L.map('map', { zoomControl: false }).setView([centerLat, centerLng], 18);
+
+    // استخدام خرائط الأقمار الصناعية عالية الدقة
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 20
     }).addTo(map);
 
-    // توزيع المباني (إحداثيات دقيقة فوق المباني)
-    const buildings = {
-        "1": { name: "مبنى 1 - القاعات", pos: [31.33365, 37.34950] },
-        "2": { name: "مبنى 2 - المختبرات", pos: [31.33420, 37.34980] },
-        "3": { name: "مبنى 3 - الورش", pos: [31.33485, 37.34940] },
-        "4": { name: "مبنى 4 - الكافتيريا", pos: [31.33525, 37.34850] },
-        "5": { name: "مبنى 5 - المصلى", pos: [31.33500, 37.34755] },
-        "6": { name: "مبنى 6 - القاعات", pos: [31.33455, 37.34715] },
-        "7": { name: "مبنى 7 - القاعات", pos: [31.33385, 37.34735] },
-        "8": { name: "مبنى 8 - الإدارة", pos: [31.33345, 37.34845] }
+    // توزيع المباني بناءً على إحداثيات المركز والنمط الدائري
+    const bldgInfo = {
+        "1": { name: "مبنى 1 - قاعات دراسية", pos: [31.3888, 37.3113], desc: "قاعات دراسية نظرية" },
+        "2": { name: "مبنى 2 - مختبرات", pos: [31.3894, 37.3117], desc: "مختبرات الحاسب والكهرباء" },
+        "3": { name: "مبنى 3 - مختبرات متخصصة", pos: [31.3901, 37.3113], desc: "ورش التقنية الميكانيكية" },
+        "4": { name: "مبنى 4 - الكافتيريا", pos: [31.3904, 37.3103], desc: "منطقة الخدمات والوجبات" },
+        "5": { name: "مبنى 5 - المصلى", pos: [31.3901, 37.3093], desc: "جامع الكلية الرئيسي" },
+        "6": { name: "مبنى 6 - قاعات دراسية", pos: [31.3896, 37.3089], desc: "قاعات تخصصية" },
+        "7": { name: "مبنى 7 - قاعات دراسية", pos: [31.3889, 37.3092], desc: "مبنى القاعات العامة" },
+        "8": { name: "مبنى 8 - العمادة", pos: [31.3885, 37.3102], desc: "مكاتب الإدارة وشؤون المتدربين" }
     };
 
     let userMarker, destMarker, routeLine;
 
-    // تتبع الموقع بدقة متناهية
-    function startNavigation() {
+    // تفعيل الـ GPS عالي الدقة
+    function startTracking() {
         if (!navigator.geolocation) {
-            alert("جوالك لا يدعم نظام تحديد المواقع.");
+            alert("جوالك لا يدعم نظام الملاحة.");
             return;
         }
-
-        navigator.geolocation.watchPosition(updateUserPos, handleLocError, {
-            enableHighAccuracy: true, // تفعيل الدقة القصوى (GPS)
-            maximumAge: 0,
-            timeout: 10000
+        navigator.geolocation.watchPosition(updateUser, (err) => alert("يرجى تفعيل الـ GPS"), {
+            enableHighAccuracy: true,
+            maximumAge: 0
         });
-        
-        document.getElementById('status').innerText = "جاري التتبع الدقيق عبر الأقمار الصناعية...";
+        document.getElementById('status').innerText = "تم تفعيل الملاحة الحية 🛰️";
     }
 
-    function updateUserPos(pos) {
-        const latlng = [pos.coords.latitude, pos.coords.longitude];
-        
+    function updateUser(pos) {
+        const p = [pos.coords.latitude, pos.coords.longitude];
         if (!userMarker) {
-            userMarker = L.circleMarker(latlng, {
-                radius: 10, color: 'white', weight: 3, fillColor: '#2196F3', fillOpacity: 1
-            }).addTo(map);
+            userMarker = L.circleMarker(p, { radius: 10, color: 'white', weight: 3, fillColor: '#2196F3', fillOpacity: 1 }).addTo(map);
         } else {
-            userMarker.setLatLng(latlng);
+            userMarker.setLatLng(p);
         }
-
-        map.setView(latlng, 19); // زوم قريب جداً على المتدرب
-        if (destMarker) updateRoute(latlng, destMarker.getLatLng());
+        if (destMarker) updatePath(p, destMarker.getLatLng());
     }
 
-    // فك التشفير والبحث
+    // فك شفرة رقم القاعة وتوجيه المتدرب
     document.getElementById('roomInput').addEventListener('input', function(e) {
-        if (e.target.value.length === 10) {
-            const bId = e.target.value[4];
-            const target = buildings[bId];
+        let val = e.target.value;
+        if (val.length === 10) {
+            const bId = val[4]; // المبنى
+            const floorNum = val[5]; // الدور
+            const roomNum = val.substring(7); // القاعة
+            
+            const target = bldgInfo[bId];
             if (target) {
-                setDestination(target);
+                let floorName = floorNum == '0' ? "الأرضي" : "العلوي (رقم " + floorNum + ")";
+                showTarget(target, roomNum, floorName);
             }
         }
     });
 
-    function setDestination(bldg) {
+    function showTarget(bldg, room, floor) {
         if (destMarker) map.removeLayer(destMarker);
         destMarker = L.marker(bldg.pos).addTo(map).bindPopup(bldg.name).openPopup();
+        map.flyTo(bldg.pos, 19);
+
+        document.getElementById('guideBox').style.display = 'block';
+        document.getElementById('targetText').innerHTML = `<b>الوجهة: ${bldg.name}</b>`;
+        document.getElementById('stepDetail').innerHTML = `📌 توجه إلى <b>الدور ${floor}</b>، القاعة رقم <b>${room}</b>.`;
         
-        document.getElementById('guide').style.display = 'block';
-        document.getElementById('targetName').innerText = bldg.name;
-        
-        if (userMarker) updateRoute(userMarker.getLatLng(), bldg.pos);
-        else startNavigation(); // ابدأ الملاحة فوراً إذا لم تكن مفعلة
+        if (userMarker) updatePath(userMarker.getLatLng(), bldg.pos);
+        else startTracking();
     }
 
-    function updateRoute(start, end) {
+    function updatePath(start, end) {
         if (routeLine) map.removeLayer(routeLine);
-        routeLine = L.polyline([start, end], {
-            color: '#2196F3', weight: 7, opacity: 0.8, lineCap: 'round', dashArray: '1, 12'
-        }).addTo(map);
-
-        const dist = map.distance(start, end).toFixed(0);
-        document.getElementById('distText').innerText = `المسافة المتبقية: ${dist} متر`;
-    }
-
-    function handleLocError(err) {
-        alert("يرجى التأكد من تشغيل الـ GPS في جوالك والسماح للمتصفح بالوصول لموقعك الدقيق.");
+        routeLine = L.polyline([start, end], { color: '#2196F3', weight: 6, opacity: 0.6, dashArray: '10, 15' }).addTo(map);
+        const d = map.distance(start, end).toFixed(0);
+        document.getElementById('distText').innerText = `المسافة المتبقية: ${d} متر`;
     }
 </script>
 
