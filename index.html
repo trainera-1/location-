@@ -26,32 +26,29 @@
         /* الواجهة الرئيسية */
         #main-app { display: none; height: 100%; flex-direction: column; position: relative; }
         
-        /* شريط البحث العلوي */
         .search-nav {
             position: absolute; top: 15px; left: 12px; right: 12px; z-index: 1000;
             background: rgba(0, 0, 0, 0.9); padding: 4px; border-radius: 16px; border: 2px solid var(--gold-main);
         }
         input { width: 100%; padding: 14px; border: none; font-size: 1.15rem; text-align: center; background: transparent; color: var(--gold-light); outline: none; font-weight: bold; }
 
-        /* شريط الحالة النحيف (يظهر عند الملاحة) */
+        /* شريط الحالة العلوي النحيف (للملاحة) */
         #status-bar {
             position: absolute; top: 90px; left: 12px; right: 12px; z-index: 999;
-            background: rgba(0, 0, 0, 0.8); border: 1px solid var(--gold-main);
+            background: rgba(0, 0, 0, 0.85); border: 1px solid var(--gold-main);
             border-radius: 12px; padding: 10px; display: none; text-align: center;
-            animation: slideDown 0.4s ease;
         }
-        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
         #map { flex: 1; width: 100%; height: 100vh; }
 
-        /* بطاقة المعلومات (قبل البدء) */
+        /* بطاقة المعلومات */
         .info-card {
             position: absolute; bottom: 30px; left: 12px; right: 12px;
             background: rgba(255, 255, 255, 0.98); color: #222; padding: 20px;
             border-radius: 20px; z-index: 1000; display: none; text-align: center;
             border-bottom: 6px solid var(--gold-main); box-shadow: 0 -8px 30px rgba(0,0,0,0.5);
         }
-        .go-btn { background: linear-gradient(45deg, #27ae60, #2ecc71); color: white; border: none; padding: 15px; border-radius: 30px; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 15px rgba(39,174,96,0.3); }
+        .go-btn { background: linear-gradient(45deg, #27ae60, #2ecc71); color: white; border: none; padding: 15px; border-radius: 30px; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1.1rem; cursor: pointer; }
 
         /* التحكم الجانبي */
         .side-controls { position: absolute; top: 50%; right: 15px; transform: translateY(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 12px; }
@@ -79,12 +76,13 @@
 
     <div id="status-bar">
         <div style="color: var(--gold-light); font-weight: bold; font-size: 0.95rem;">📍 <span id="statusBldg"></span></div>
-        <div style="color: #27ae60; font-size: 0.85rem; font-weight: bold; margin-top: 4px;">المسافة: <span id="statusDist">0</span> متر</div>
+        <div style="color: #27ae60; font-size: 0.85rem; font-weight: bold; margin-top: 4px;">المسافة المتبقية: <span id="statusDist">0</span> متر</div>
     </div>
 
     <div class="info-card" id="infoCard">
-        <h3 id="bldgName" style="color: #004a80; margin: 0;"></h3>
-        <div id="targetDetail" style="background: #fff9e3; padding: 12px; border-radius: 12px; margin-top: 12px; border: 1px solid var(--gold-light); font-weight: bold; color: #333;"></div>
+        <h3 id="bldgName" style="color: #004a80; margin: 0; font-size: 1.2rem;"></h3>
+        <p id="bldgDesc" style="margin: 8px 0; color: #666; font-size: 0.9rem;"></p>
+        <div id="targetDetail" style="background: #fff9e3; padding: 12px; border-radius: 12px; margin-top: 12px; border: 1px solid var(--gold-light); font-weight: bold; color: #333; line-height: 1.5;"></div>
         <button id="goBtn" class="go-btn" onclick="startJourney()">ابدأ الرحلة 🚀</button>
     </div>
 
@@ -101,16 +99,20 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     const collegeCenter = [31.3893496, 37.3102727];
+    
+    // إعادة الأسماء الأصلية كما كانت
     const buildings = {
-        "1": { name: "مبنى الأنشطة والمسرح", coords: [31.3885802, 37.3098097], desc: "المسرح الرئيسي والأنشطة." },
-        "2": { name: "مبنى الدعم الفني والشبكات", coords: [31.3884981, 37.3106472], desc: "الدعم الفني والشبكات." },
-        "3": { name: "مبنى الدراسات العامة والمحاسبة", coords: [31.3888144, 37.3111052], desc: "الدراسات العامة والمحاسبة." },
-        "4": { name: "مبنى الكافتيريا", coords: [31.3892940, 37.3111964], desc: "منطقة الكافتيريا." },
-        "5": { name: "مبنى المصلى", coords: [31.3896953, 37.3114700], desc: "المصلى الرئيسي." },
-        "6": { name: "مبنى ورش الميكانيكا", coords: [31.3903633, 37.3105369], desc: "ورش الميكانيكا." },
-        "7": { name: "قسم التقنية الميكانيكية", coords: [31.3904349, 37.3098989], desc: "التقنية الميكانيكية." },
-        "8": { name: "مبنى العمادة وشؤون المتدربين", coords: [31.3898115, 37.3093759], desc: "العمادة وشؤون المتدربين." }
+        "1": { name: "مبنى 1 - مبنى الأنشطة والمسرح", coords: [31.3885802, 37.3098097], dept: "الأنشطة", desc: "يضم المسرح الرئيسي وقاعات الفعاليات والأنشطة الطلابية." },
+        "2": { name: "مبنى 2 - قسم الدعم الفني وأنظمة الشبكات", coords: [31.3884981, 37.3106472], dept: "الدعم الفني والشبكات", desc: "معامل الحاسب الآلي وصيانة الشبكات والدعم التقني." },
+        "3": { name: "مبنى 3 - قسم الدراسات العامة والمحاسبة", coords: [31.3888144, 37.3111052], dept: "الدراسات العامة والمحاسبة", desc: "قاعات اللغة الإنجليزية والرياضيات والمحاسبة." },
+        "4": { name: "مبنى 4 - الكافتيريا", coords: [31.3892940, 37.3111964], dept: "الكافتيريا", desc: "منطقة الخدمات الغذائية (فطور وبوفيه الكلية)." },
+        "5": { name: "مبنى 5 - المصلى", coords: [31.3896953, 37.3114700], dept: "المصلى", desc: "جامع الكلية الرئيسي (صلاة ومسجد)." },
+        "6": { name: "مبنى 6 - ورش التقنية الميكانيكية", coords: [31.3903633, 37.3105369], dept: "الميكانيكا", desc: "ورش تخصصية للمحركات ومركبات التقنية الميكانيكية." },
+        "7": { name: "مبنى 7 - قسم التقنية الميكانيكية", coords: [31.3904349, 37.3098989], dept: "التقنية الميكانيكية", desc: "القاعات النظرية والمكاتب الإدارية لقسم الميكانيكا." },
+        "8": { name: "مبنى 8 - العمادة وشؤون المتدربين", coords: [31.3898115, 37.3093759], dept: "العمادة", desc: "مكتب العميد، الوكلاء، ومكاتب شؤون المتدربين." }
     };
+
+    const keywordMap = { "بوفيه": "4", "كافتيريا": "4", "مطعم": "4", "مصلى": "5", "صلاة": "5", "عمادة": "8", "شؤون": "8", "مسرح": "1", "أنشطة": "1" };
 
     const map = L.map('map', { zoomControl: false }).setView(collegeCenter, 18);
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 20 }).addTo(map);
@@ -131,24 +133,15 @@
         const p = [pos.coords.latitude, pos.coords.longitude];
         if (!userMarker) userMarker = L.circleMarker(p, { radius: 10, color: 'white', weight: 3, fillColor: '#2196F3', fillOpacity: 1 }).addTo(map);
         else userMarker.setLatLng(p);
-        
         if (isNavigating) {
             map.setView(p, 19);
-            if (destMarker) updateRoute(p, destMarker.getLatLng());
+            if (destMarker) drawSafeRoute(p, destMarker.getLatLng());
         }
     }
 
-    function startJourney() {
-        isNavigating = true;
-        document.getElementById('infoCard').style.display = 'none'; // إخفاء البطاقة الكبيرة
-        document.getElementById('status-bar').style.display = 'block'; // إظهار شريط الحالة العلوي
-        document.getElementById('statusBldg').innerText = document.getElementById('bldgName').innerText;
-        centerOnUser();
-    }
-
-    function updateRoute(start, end) {
+    function drawSafeRoute(start, end) {
         if (routeLine) map.removeLayer(routeLine);
-        // مسار ذكي يمر بساحة المنتصف لتجنب المباني
+        // مسار يمر بساحة المنتصف لتجنب المباني
         routeLine = L.polyline([start, collegeCenter, end], { color: '#d4af37', weight: 7, opacity: 0.8, dashArray: '1, 12' }).addTo(map);
         const dist = (map.distance(start, collegeCenter) + map.distance(collegeCenter, end)).toFixed(0);
         document.getElementById('statusDist').innerText = dist;
@@ -156,32 +149,51 @@
 
     document.getElementById('roomInput').addEventListener('input', function(e) {
         let val = e.target.value.trim().toUpperCase();
+        for (let k in keywordMap) { if (val.includes(k.toUpperCase())) { executeSearch(keywordMap[k], "keyword", k); return; } }
         if (val.length === 10) {
-            const bId = val[4]; const floor = val[5];
-            showDest(bId, { f: floor, r: val.substring(isNaN(val.charAt(9)) ? 6 : 7) });
+            const bId = val[4]; const floor = val[5]; const isW = isNaN(val.charAt(9));
+            if (bId === "6" && parseInt(floor) > 1) { alert("تنبيه: مبنى 6 أرضي وأول فقط."); return; }
+            if (!isW && floor !== val[7]) { alert("خطأ: الدور (6) لا يطابق رقم القاعة (8)."); return; }
+            executeSearch(bId, isW ? "workshop" : "code", { f: floor, r: val.substring(isW ? 6 : 7) });
         }
     });
 
-    function showDest(id, data) {
-        const b = buildings[id]; if (!b) return;
+    function executeSearch(bId, type, data) {
+        const target = buildings[bId]; if (!target) return;
         isNavigating = false;
         document.getElementById('status-bar').style.display = 'none';
         document.getElementById('infoCard').style.display = 'block';
-        document.getElementById('bldgName').innerText = b.name;
+        document.getElementById('bldgName').innerText = target.name;
+        document.getElementById('bldgDesc').innerText = target.desc;
         if (destMarker) map.removeLayer(destMarker);
-        destMarker = L.marker(b.coords).addTo(map).bindPopup(b.name).openPopup();
-        map.flyTo(b.coords, 19);
-        
-        // تخصيص مسميات الأدوار حسب طلبك
-        let desc = "";
-        if (id === "7") {
-            if (data.f === "3") desc = "مكاتب إدارية وقاعات نظرية لقسم الميكانيكا";
-            else if (data.f === "2") desc = "قاعات نظرية / معامل / ورش";
-            else desc = "ورش التقنية الميكانيكية";
+        destMarker = L.marker(target.coords).addTo(map).bindPopup(target.name).openPopup();
+        map.flyTo(target.coords, 19);
+
+        let floorLabel = "";
+        if (["1", "4", "5", "8"].includes(bId)) {
+            floorLabel = `وجهة المرفق: ${target.name}`;
         } else {
-            desc = data.f === "3" ? "مكاتب إدارة وقاعات نظرية" : "قاعات نظرية / معامل / ورش";
+            // إعادة مسميات الأدوار الدقيقة كما طلبت سابقاً
+            if (bId === "7") {
+                if (data.f === "3") floorLabel = "مكاتب إدارية وقاعات نظرية لقسم التقنية الميكانيكية";
+                else if (data.f === "2") floorLabel = "قاعات نظرية / معامل / ورش";
+                else floorLabel = "ورش";
+            } else if (bId === "6") floorLabel = "ورش التقنية الميكانيكية";
+            else {
+                if (data.f === "3") floorLabel = `مكاتب إدارة وقاعات نظرية لقسم ${target.dept}`;
+                else floorLabel = "قاعات نظرية / معامل / ورش";
+            }
+            floorLabel += `<br>${type === 'workshop' ? 'رقم الورشة' : 'رقم القاعة'}: ${data.r}`;
         }
-        document.getElementById('targetDetail').innerHTML = `📌 <b>${desc}</b><br>رقم: ${data.r}`;
+        document.getElementById('targetDetail').innerHTML = `📌 <b>${floorLabel}</b>`;
+    }
+
+    function startJourney() {
+        isNavigating = true;
+        document.getElementById('infoCard').style.display = 'none';
+        document.getElementById('status-bar').style.display = 'block';
+        document.getElementById('statusBldg').innerText = document.getElementById('bldgName').innerText;
+        centerOnUser();
     }
 
     function centerOnUser() { if (userMarker) map.setView(userMarker.getLatLng(), 19); }
