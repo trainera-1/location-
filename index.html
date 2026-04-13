@@ -32,7 +32,7 @@
         }
         input { width: 100%; padding: 14px; border: none; font-size: 1.15rem; text-align: center; background: transparent; color: var(--gold-light); outline: none; font-weight: bold; }
 
-        /* شريط الحالة العلوي النحيف (للملاحة) */
+        /* شريط الحالة العلوي */
         #status-bar {
             position: absolute; top: 90px; left: 12px; right: 12px; z-index: 999;
             background: rgba(0, 0, 0, 0.85); border: 1px solid var(--gold-main);
@@ -100,7 +100,6 @@
 <script>
     const collegeCenter = [31.3893496, 37.3102727];
     
-    // إعادة الأسماء الأصلية كما كانت
     const buildings = {
         "1": { name: "مبنى 1 - مبنى الأنشطة والمسرح", coords: [31.3885802, 37.3098097], dept: "الأنشطة", desc: "يضم المسرح الرئيسي وقاعات الفعاليات والأنشطة الطلابية." },
         "2": { name: "مبنى 2 - قسم الدعم الفني وأنظمة الشبكات", coords: [31.3884981, 37.3106472], dept: "الدعم الفني والشبكات", desc: "معامل الحاسب الآلي وصيانة الشبكات والدعم التقني." },
@@ -141,7 +140,6 @@
 
     function drawSafeRoute(start, end) {
         if (routeLine) map.removeLayer(routeLine);
-        // مسار يمر بساحة المنتصف لتجنب المباني
         routeLine = L.polyline([start, collegeCenter, end], { color: '#d4af37', weight: 7, opacity: 0.8, dashArray: '1, 12' }).addTo(map);
         const dist = (map.distance(start, collegeCenter) + map.distance(collegeCenter, end)).toFixed(0);
         document.getElementById('statusDist').innerText = dist;
@@ -170,18 +168,22 @@
         map.flyTo(target.coords, 19);
 
         let floorLabel = "";
+        const fNames = { "0": "الأرضي", "1": "الأول", "2": "الثاني", "3": "الثالث" };
+        const currentFloorName = fNames[data.f] || data.f;
+
         if (["1", "4", "5", "8"].includes(bId)) {
             floorLabel = `وجهة المرفق: ${target.name}`;
         } else {
-            // إعادة مسميات الأدوار الدقيقة كما طلبت سابقاً
+            // دمج كلمة "الدور" مع الوصف لضمان الدقة الكاملة
             if (bId === "7") {
-                if (data.f === "3") floorLabel = "مكاتب إدارية وقاعات نظرية لقسم التقنية الميكانيكية";
-                else if (data.f === "2") floorLabel = "قاعات نظرية / معامل / ورش";
-                else floorLabel = "ورش";
-            } else if (bId === "6") floorLabel = "ورش التقنية الميكانيكية";
-            else {
-                if (data.f === "3") floorLabel = `مكاتب إدارة وقاعات نظرية لقسم ${target.dept}`;
-                else floorLabel = "قاعات نظرية / معامل / ورش";
+                if (data.f === "3") floorLabel = `الدور ${currentFloorName} — مكاتب إدارية وقاعات نظرية لقسم التقنية الميكانيكية`;
+                else if (data.f === "2") floorLabel = `الدور ${currentFloorName} — قاعات نظرية / معامل / ورش`;
+                else floorLabel = `الدور ${currentFloorName} — ورش`;
+            } else if (bId === "6") {
+                floorLabel = "الدور الأول — ورش التقنية الميكانيكية";
+            } else {
+                if (data.f === "3") floorLabel = `الدور ${currentFloorName} — مكاتب إدارة وقاعات نظرية لقسم ${target.dept}`;
+                else floorLabel = `الدور ${currentFloorName} — قاعات نظرية / معامل / ورش`;
             }
             floorLabel += `<br>${type === 'workshop' ? 'رقم الورشة' : 'رقم القاعة'}: ${data.r}`;
         }
