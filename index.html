@@ -12,7 +12,6 @@
         }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg-dark); overflow: hidden; width: 100%; }
 
-        /* الشاشة الترحيبية */
         #welcome-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
@@ -23,9 +22,7 @@
         .start-btn { background: linear-gradient(45deg, var(--gold-dark), var(--gold-light)); color: #000; border: none; padding: 16px 60px; border-radius: 35px; font-size: 1.25rem; font-weight: bold; cursor: pointer; box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4); }
         .signature { position: absolute; bottom: 40px; color: var(--gold-main); font-weight: bold; font-size: 1.1rem; }
 
-        /* الواجهة الرئيسية */
         #main-app { display: none; height: 100%; flex-direction: column; position: relative; }
-        
         .search-nav {
             position: absolute; top: 15px; left: 12px; right: 12px; z-index: 1000;
             background: rgba(0, 0, 0, 0.9); padding: 4px; border-radius: 16px; border: 2px solid var(--gold-main);
@@ -49,10 +46,7 @@
         .go-btn { background: linear-gradient(45deg, #27ae60, #2ecc71); color: white; border: none; padding: 15px; border-radius: 30px; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1.1rem; cursor: pointer; }
 
         .side-controls { position: absolute; top: 50%; right: 15px; transform: translateY(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 12px; }
-        .btn-side {
-            background: rgba(0, 0, 0, 0.85); color: var(--gold-main); border: 2px solid var(--gold-main);
-            width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer;
-        }
+        .btn-side { background: rgba(0, 0, 0, 0.85); color: var(--gold-main); border: 2px solid var(--gold-main); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -78,7 +72,6 @@
 
     <div class="info-card" id="infoCard">
         <h3 id="bldgName" style="color: #004a80; margin: 0; font-size: 1.2rem;"></h3>
-        <p id="bldgDesc" style="margin: 8px 0; color: #666; font-size: 0.9rem;"></p>
         <div id="targetDetail" style="background: #fff9e3; padding: 12px; border-radius: 12px; margin-top: 12px; border: 1px solid var(--gold-light); font-weight: bold; color: #333; line-height: 1.5;"></div>
         <button id="goBtn" class="go-btn" onclick="startJourney()">ابدأ الرحلة 🚀</button>
     </div>
@@ -97,17 +90,22 @@
 <script>
     const collegeCenter = [31.3893496, 37.3102727];
     const buildings = {
-        "1": { name: "مبنى 1 - مبنى الأنشطة والمسرح", coords: [31.3885802, 37.3098097], dept: "الأنشطة", desc: "يضم المسرح الرئيسي وقاعات الفعاليات والأنشطة الطلابية." },
-        "2": { name: "مبنى 2 - قسم الدعم الفني وأنظمة الشبكات", coords: [31.3884981, 37.3106472], dept: "الدعم الفني والشبكات", desc: "معامل الحاسب الآلي وصيانة الشبكات والدعم التقني." },
-        "3": { name: "مبنى 3 - قسم الدراسات العامة والمحاسبة", coords: [31.3888144, 37.3111052], dept: "الدراسات العامة والمحاسبة", desc: "قاعات اللغة الإنجليزية والرياضيات والمحاسبة." },
-        "4": { name: "مبنى 4 - الكافتيريا", coords: [31.3892940, 37.3111964], dept: "الكافتيريا", desc: "منطقة الخدمات الغذائية (فطور وبوفيه الكلية)." },
-        "5": { name: "مبنى 5 - المصلى", coords: [31.3896953, 37.3114700], dept: "المصلى", desc: "جامع الكلية الرئيسي (صلاة ومسجد)." },
-        "6": { name: "مبنى 6 - ورش التقنية الميكانيكية", coords: [31.3903633, 37.3105369], dept: "الميكانيكا", desc: "ورش تخصصية للمحركات ومركبات التقنية الميكانيكية." },
-        "7": { name: "مبنى 7 - قسم التقنية الميكانيكية", coords: [31.3904349, 37.3098989], dept: "التقنية الميكانيكية", desc: "القاعات النظرية والمكاتب الإدارية لقسم الميكانيكا." },
-        "8": { name: "مبنى 8 - العمادة وشؤون المتدربين", coords: [31.3898115, 37.3093759], dept: "العمادة", desc: "مكتب العميد، الوكلاء، ومكاتب شؤون المتدربين." }
+        "1": { name: "مبنى 1 - الأنشطة والمسرح", coords: [31.3885802, 37.3098097], dept: "الأنشطة" },
+        "2": { name: "مبنى 2 - الدعم الفني والشبكات", coords: [31.3884981, 37.3106472], dept: "الدعم الفني" },
+        "3": { name: "مبنى 3 - الدراسات العامة والمحاسبة", coords: [31.3888144, 37.3111052], dept: "الدراسات العامة" },
+        "4": { name: "مبنى 4 - الكافتيريا", coords: [31.3892940, 37.3111964], dept: "الكافتيريا" },
+        "5": { name: "مبنى 5 - المصلى", coords: [31.3896953, 37.3114700], dept: "المصلى" },
+        "6": { name: "مبنى 6 - ورش الميكانيكا", coords: [31.3903633, 37.3105369], dept: "الميكانيكا" },
+        "7": { name: "مبنى 7 - قسم التقنية الميكانيكية", coords: [31.3904349, 37.3098989], dept: "الميكانيكا" },
+        "8": { name: "مبنى 8 - العمادة وشؤون المتدربين", coords: [31.3898115, 37.3093759], dept: "العمادة" }
     };
 
-    const keywordMap = { "بوفيه": "4", "كافتيريا": "4", "مطعم": "4", "مصلى": "5", "صلاة": "5", "عمادة": "8", "شؤون": "8", "مسرح": "1", "أنشطة": "1" };
+    // ممرات آمنة للتوجيه الالتفافي (تلقائية)
+    const waypoints = [
+        [31.389100, 37.310400], // ممر علوي
+        [31.389600, 37.310800], // ممر يمين
+        [31.388800, 37.310000]  // ممر يسار
+    ];
 
     const map = L.map('map', { zoomControl: false }).setView(collegeCenter, 18);
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 20 }).addTo(map);
@@ -122,75 +120,89 @@
             document.getElementById('main-app').style.display = 'flex';
             map.invalidateSize();
             if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(updatePos, null, { 
-                    enableHighAccuracy: true, timeout: 5000, maximumAge: 0 
-                });
+                navigator.geolocation.watchPosition(updatePos, null, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
             }
         }, 800);
     }
 
     function updatePos(pos) {
         lastUserCoords = [pos.coords.latitude, pos.coords.longitude];
-        if (!userMarker) {
-            userMarker = L.circleMarker(lastUserCoords, { radius: 10, color: 'white', weight: 3, fillColor: '#2196F3', fillOpacity: 1 }).addTo(map);
-        } else {
-            userMarker.setLatLng(lastUserCoords);
-        }
-        
-        if (destMarker) drawSafeRoute(lastUserCoords, destMarker.getLatLng());
+        if (!userMarker) userMarker = L.circleMarker(lastUserCoords, { radius: 10, color: 'white', weight: 3, fillColor: '#2196F3', fillOpacity: 1 }).addTo(map);
+        else userMarker.setLatLng(lastUserCoords);
+        if (destMarker) drawDirectSafeRoute(lastUserCoords, destMarker.getLatLng());
         if (isNavigating) map.setView(lastUserCoords, 19);
     }
 
-    function drawSafeRoute(start, end) {
+    function drawDirectSafeRoute(start, end) {
         if (routeLine) map.removeLayer(routeLine);
-        routeLine = L.polyline([start, collegeCenter, end], { color: '#d4af37', weight: 7, opacity: 0.8, dashArray: '1, 12' }).addTo(map);
-        const dist = (map.distance(start, collegeCenter) + map.distance(collegeCenter, end)).toFixed(0);
-        const displayDist = isNaN(dist) ? "جاري الحساب..." : dist + " متر";
         
+        // حساب المسافة المباشرة للعداد
+        const realDist = map.distance(start, end).toFixed(0);
+        
+        // منطق "تجاوز المباني": 
+        // إذا كان الخط يقطع المسافة، يختار النظام أقرب "ممر" مجاور ليلتف من حوله
+        let path = [start, end];
+        let needsAvoidance = false;
+
+        // التحقق من تداخل المسار مع أي مبنى (تبسيطاً نستخدم الالتفاف عبر أقرب ممر متاح)
+        for (let b in buildings) {
+            let bCoord = buildings[b].coords;
+            if (map.distance(start, bCoord) < 30 && b !== destMarker.id) {
+                needsAvoidance = true;
+                break;
+            }
+        }
+
+        if (needsAvoidance) {
+            let bestWay = waypoints[0];
+            let minWayDist = Infinity;
+            waypoints.forEach(w => {
+                let d = map.distance(start, w) + map.distance(w, end);
+                if (d < minWayDist) { minWayDist = d; bestWay = w; }
+            });
+            path = [start, bestWay, end];
+        }
+
+        routeLine = L.polyline(path, { color: '#d4af37', weight: 7, opacity: 0.8, dashArray: '1, 12' }).addTo(map);
+        
+        let displayDist = realDist < 6 ? "وصلت لوجهتك" : realDist + " متر";
         if (isNavigating) document.getElementById('statusDist').innerText = displayDist;
-        else document.getElementById('infoCard').querySelector('p').innerText = "المسافة التقريبية: " + displayDist;
     }
 
     document.getElementById('roomInput').addEventListener('input', function(e) {
         let val = e.target.value.trim().toUpperCase();
-        for (let k in keywordMap) { if (val.includes(k.toUpperCase())) { executeSearch(keywordMap[k], "keyword", k); return; } }
         if (val.length === 10) {
-            const bId = val[4]; const floor = val[5]; const isW = isNaN(val.charAt(9));
-            executeSearch(bId, isW ? "workshop" : "code", { f: floor, r: val.substring(isW ? 6 : 7) });
+            const bId = val[4]; const floor = val[5];
+            showDest(bId, { f: floor, r: val.substring(isNaN(val.charAt(9)) ? 6 : 7) });
         }
     });
 
-    function executeSearch(bId, type, data) {
-        const target = buildings[bId]; if (!target) return;
+    function showDest(id, data) {
+        const b = buildings[id]; if (!b) return;
         isNavigating = false;
         document.getElementById('status-bar').style.display = 'none';
         document.getElementById('infoCard').style.display = 'block';
-        document.getElementById('bldgName').innerText = target.name;
-        
+        document.getElementById('bldgName').innerText = b.name;
         if (destMarker) map.removeLayer(destMarker);
-        destMarker = L.marker(target.coords).addTo(map).bindPopup(target.name).openPopup();
-        map.flyTo(target.coords, 19);
+        destMarker = L.marker(b.coords).addTo(map).bindPopup(b.name).openPopup();
+        destMarker.id = id;
+        map.flyTo(b.coords, 19);
 
-        let floorLabel = "";
         const fNames = { "0": "الأرضي", "1": "الأول", "2": "الثاني", "3": "الثالث" };
         const currentFloorName = fNames[data.f] || data.f;
 
-        if (["1", "4", "5", "8"].includes(bId)) {
-            floorLabel = `وجهة المرفق: ${target.name}`;
-        } else {
-            if (bId === "7") {
-                if (data.f === "3") floorLabel = `الدور ${currentFloorName} — مكاتب إدارية وقاعات نظرية لقسم التقنية الميكانيكية`;
-                else if (data.f === "2") floorLabel = `الدور ${currentFloorName} — قاعات نظرية / معامل / ورش`;
-                else floorLabel = `الدور ${currentFloorName} — ورش`;
-            } else if (bId === "6") floorLabel = "الدور الأول — ورش التقنية الميكانيكية";
-            else floorLabel = `الدور ${currentFloorName} — قاعات نظرية / معامل / ورش`;
-            
-            if (data.r) floorLabel += `<br>${type === 'workshop' ? 'رقم الورشة' : 'رقم القاعة'}: ${data.r}`;
+        let label = "";
+        if (id === "7") {
+            if (data.f === "3") label = `الدور ${currentFloorName} — مكاتب إدارية وقاعات نظرية لقسم الميكانيكا`;
+            else if (data.f === "2") label = `الدور ${currentFloorName} — قاعات نظرية / معامل / ورش`;
+            else label = `الدور ${currentFloorName} — ورش`;
+        } else if (id === "6") label = "الدور الأول — ورش التقنية الميكانيكية";
+        else {
+            if (data.f === "3") label = `الدور ${currentFloorName} — مكاتب إدارة وقاعات نظرية لقسم ${b.dept}`;
+            else label = `الدور ${currentFloorName} — قاعات نظرية / معامل / ورش`;
         }
-        document.getElementById('targetDetail').innerHTML = `📌 <b>${floorLabel}</b>`;
-        
-        // رسم السهم فوراً إذا كان الموقع متاحاً
-        if (lastUserCoords) drawSafeRoute(lastUserCoords, target.coords);
+        document.getElementById('targetDetail').innerHTML = `📌 <b>${label}</b><br>رقم: ${data.r}`;
+        if (lastUserCoords) drawDirectSafeRoute(lastUserCoords, b.coords);
     }
 
     function startJourney() {
