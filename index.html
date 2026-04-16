@@ -12,14 +12,25 @@
         }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg-dark); overflow: hidden; width: 100%; }
 
-        /* شاشة الترحيب */
+        /* الشاشة الترحيبية - إعادة العنوان للفخامة والوضوح */
         #welcome-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             z-index: 9999; text-align: center; padding: 20px; box-sizing: border-box; transition: opacity 0.8s ease;
         }
-        .start-btn { background: linear-gradient(45deg, var(--gold-dark), var(--gold-light)); color: #000; border: none; padding: 16px 60px; border-radius: 35px; font-size: 1.25rem; font-weight: bold; cursor: pointer; box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4); }
+        .app-title { 
+            font-size: 2.8rem; /* تكبير الحجم للوضوح */
+            font-weight: 900;
+            color: var(--gold-main);
+            background: linear-gradient(to bottom, #f1d279 0%, #d4af37 50%, #aa8c2c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0px 4px 15px rgba(212, 175, 55, 0.4); /* وهج ذهبي خفيف */
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        .start-btn { background: linear-gradient(45deg, var(--gold-dark), var(--gold-light)); color: #000; border: none; padding: 18px 70px; border-radius: 40px; font-size: 1.3rem; font-weight: bold; cursor: pointer; box-shadow: 0 5px 25px rgba(212, 175, 55, 0.4); transition: 0.3s; }
 
         /* الواجهة الرئيسية */
         #main-app { display: none; height: 100%; flex-direction: column; position: relative; }
@@ -29,7 +40,6 @@
         }
         input { width: 100%; padding: 14px; border: none; font-size: 1.15rem; text-align: center; background: transparent; color: var(--gold-light); outline: none; font-weight: bold; }
 
-        /* شريط الحالة العلوي */
         #status-bar {
             position: absolute; top: 90px; left: 12px; right: 12px; z-index: 999;
             background: rgba(0, 0, 0, 0.85); border: 1px solid var(--gold-main);
@@ -38,7 +48,7 @@
 
         #map { flex: 1; width: 100%; height: 100vh; }
 
-        /* أيقونة المستخدم مع شعاع التوجيه */
+        /* أيقونة المستخدم مع شعاع التوجيه الذكي */
         .user-location-icon {
             position: relative; width: 20px; height: 20px;
             background: var(--blue-gps); border: 3px solid white;
@@ -63,15 +73,15 @@
 
         .side-controls { position: absolute; top: 50%; right: 15px; transform: translateY(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 12px; }
         .btn-side { background: rgba(0, 0, 0, 0.85); color: var(--gold-main); border: 2px solid var(--gold-main); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; }
-        .signature { position: absolute; bottom: 40px; color: var(--gold-main); font-weight: bold; }
+        .signature { position: absolute; bottom: 40px; color: var(--gold-main); font-weight: bold; font-size: 1.1rem; }
     </style>
 </head>
 <body>
 
 <div id="welcome-screen">
-    <div style="text-align: center;">
+    <div class="welcome-content">
         <h1 class="app-title">بوصلة المتدرب التقني</h1>
-        <p style="color: #bbb; line-height: 1.6; margin-bottom: 35px;">مرحباً بك في الكلية التقنية بالقريات!<br>دليلك الذكي للوصول إلى وجهتك بدقة واحترافية.</p>
+        <p style="color: #bbb; line-height: 1.6; margin-bottom: 35px; font-size: 1.1rem;">مرحباً بك في الكلية التقنية بالقريات!<br>دليلك الذكي للوصول إلى وجهتك بدقة واحترافية.</p>
         <button class="start-btn" onclick="requestPermissions()">البدء</button>
     </div>
     <div class="signature">من إعداد: م/ عادل الشمري</div>
@@ -79,7 +89,7 @@
 
 <div id="main-app">
     <div class="search-nav">
-        <input type="text" id="roomInput" placeholder="قاعة، ورشة، أو (مصلى، بوفيه، إدارة...)" maxlength="20">
+        <input type="text" id="roomInput" placeholder="بحث (مصلى، مسرح، أو رقم القاعة...)" maxlength="20">
     </div>
 
     <div id="status-bar">
@@ -88,7 +98,7 @@
     </div>
 
     <div class="info-card" id="infoCard">
-        <h3 id="bldgName" style="color: #004a80; margin: 0; font-size: 1.2rem;"></h3>
+        <h3 id="bldgName" style="color: #004a80; margin: 0; font-size: 1.25rem;"></h3>
         <div id="targetDetail" style="background: #fff9e3; padding: 12px; border-radius: 12px; margin-top: 12px; border: 1px solid var(--gold-light); font-weight: bold; color: #333; line-height: 1.5;"></div>
         <button id="goBtn" class="go-btn" onclick="startJourney()">انطلاق 🚀</button>
     </div>
@@ -107,7 +117,7 @@
 <script>
     const collegeCenter = [31.3893496, 37.3102727];
     
-    // إعداد الخريطة مع تضاريس جوجل ستايلايت
+    // الخريطة الجوية من جوجل (Satellite)
     const map = L.map('map', { zoomControl: false, maxZoom: 20 }).setView(collegeCenter, 18);
     L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20 }).addTo(map);
 
@@ -125,14 +135,15 @@
     const keywordMap = { 
         "بوفيه": "4", "كافتيريا": "4", "مطعم": "4", 
         "مصلى": "5", "صلاة": "5", "مسجد": "5", 
-        "عمادة": "8", "شؤون": "8", "إدارة": "8", "ادارة": "8",
-        "مسرح": "1", "أنشطة": "1", "فعاليات": "1" 
+        "عمادة": "8", "شؤون": "8", "إدارة": "8",
+        "مسرح": "1", "أنشطة": "1"
     };
 
     let userMarker, destMarker, routeLine, isNavigating = false;
     let lastUserCoords = null;
     let userHeading = 0;
 
+    // تفعيل أذونات البوصلة والموقع
     async function requestPermissions() {
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
             try {
@@ -185,21 +196,16 @@
         const txt = dist < 6 ? "وصلت لوجهتك" : dist + " متر";
         if (isNavigating) document.getElementById('statusDist').innerText = txt;
         else {
-            const cp = document.getElementById('infoCard').querySelector('p');
-            if(cp) cp.innerText = "المسافة: " + txt;
+            const cp = document.getElementById('infoCard').querySelector('div');
+            // تحديث المسافة في البطاقة إذا لزم الأمر
         }
     }
 
     document.getElementById('roomInput').addEventListener('input', function(e) {
-        let val = e.target.value.trim();
-        // أولاً: فحص الكلمات المفتاحية
+        let val = e.target.value.trim().toLowerCase();
         for (let k in keywordMap) {
-            if (val.includes(k)) {
-                executeSearch(keywordMap[k], "key", k);
-                return;
-            }
+            if (val.includes(k)) { executeSearch(keywordMap[k], "key", k); return; }
         }
-        // ثانياً: فحص رقم القاعة (10 خانات)
         if (val.length === 10) {
             const bId = val[4]; const floor = val[5];
             executeSearch(bId, "code", { f: floor, r: val.substring(isNaN(val.charAt(9)) ? 6 : 7) });
