@@ -12,16 +12,16 @@
         }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg-dark); overflow: hidden; width: 100%; }
 
+        /* الشاشة الترحيبية */
         #welcome-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             z-index: 9999; text-align: center; padding: 20px; box-sizing: border-box; transition: opacity 0.8s ease;
         }
-        .app-title { font-size: 2.2rem; background: linear-gradient(to bottom, var(--gold-light), var(--gold-dark)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; margin-bottom: 10px; }
         .start-btn { background: linear-gradient(45deg, var(--gold-dark), var(--gold-light)); color: #000; border: none; padding: 16px 60px; border-radius: 35px; font-size: 1.25rem; font-weight: bold; cursor: pointer; box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4); }
-        .signature { position: absolute; bottom: 40px; color: var(--gold-main); font-weight: bold; font-size: 1.1rem; }
 
+        /* الواجهة الرئيسية */
         #main-app { display: none; height: 100%; flex-direction: column; position: relative; }
         .search-nav {
             position: absolute; top: 15px; left: 12px; right: 12px; z-index: 1000;
@@ -36,6 +36,21 @@
         }
 
         #map { flex: 1; width: 100%; height: 100vh; }
+
+        /* أيقونة المستخدم الجديدة مع الشعاع */
+        .user-location-icon {
+            position: relative; width: 20px; height: 20px;
+            background: var(--blue-gps); border: 3px solid white;
+            border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .user-heading-beam {
+            position: absolute; top: -45px; left: -15px;
+            width: 50px; height: 50px;
+            background: radial-gradient(ellipse at bottom, rgba(33, 150, 243, 0.6) 0%, rgba(33, 150, 243, 0) 70%);
+            clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
+            transform-origin: bottom center;
+            pointer-events: none;
+        }
 
         .info-card {
             position: absolute; bottom: 30px; left: 12px; right: 12px;
@@ -52,12 +67,11 @@
 <body>
 
 <div id="welcome-screen">
-    <div class="welcome-content">
-        <h1 class="app-title">بوصلة المتدرب التقني</h1>
-        <p style="color: #bbb; line-height: 1.6; margin-bottom: 35px;">مرحباً بك في الكلية التقنية بالقريات!<br>دليلك الذكي للوصول إلى وجهتك بدقة واحترافية.</p>
-        <button class="start-btn" onclick="startApp()">البدء</button>
+    <div style="text-align: center;">
+        <h1 style="font-size: 2.2rem; color: var(--gold-main); font-weight: 900; margin-bottom: 15px;">بوصلة المتدرب التقني</h1>
+        <p style="color: #bbb; line-height: 1.6; margin-bottom: 35px;">دليلك الذكي للملاحة داخل الكلية التقنية بالقريات<br>بإشراف م/ عادل الشمري</p>
+        <button class="start-btn" onclick="requestPermissions()">ابدأ الملاحة 🚀</button>
     </div>
-    <div class="signature">من إعداد: م/ عادل الشمري</div>
 </div>
 
 <div id="main-app">
@@ -67,14 +81,13 @@
 
     <div id="status-bar">
         <div style="color: var(--gold-light); font-weight: bold; font-size: 0.95rem;">📍 <span id="statusBldg"></span></div>
-        <div style="color: #27ae60; font-size: 0.85rem; font-weight: bold; margin-top: 4px;">المسافة: <span id="statusDist">جاري تحديد الموقع...</span></div>
+        <div style="color: #27ae60; font-size: 0.85rem; font-weight: bold; margin-top: 4px;">المسافة: <span id="statusDist">--</span> متر</div>
     </div>
 
     <div class="info-card" id="infoCard">
         <h3 id="bldgName" style="color: #004a80; margin: 0; font-size: 1.2rem;"></h3>
-        <p id="bldgDesc" style="margin: 8px 0; color: #666; font-size: 0.9rem;"></p>
         <div id="targetDetail" style="background: #fff9e3; padding: 12px; border-radius: 12px; margin-top: 12px; border: 1px solid var(--gold-light); font-weight: bold; color: #333; line-height: 1.5;"></div>
-        <button id="goBtn" class="go-btn" onclick="startJourney()">ابدأ الرحلة 🚀</button>
+        <button id="goBtn" class="go-btn" onclick="startJourney()">انطلاق 🧭</button>
     </div>
 
     <div class="side-controls">
@@ -89,6 +102,15 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+    const collegeCenter = [31.3893496, 37.3102727];
+    
+    // إعداد الخريطة مع تفعيل تضاريس جوجل (Google Satellite)
+    const map = L.map('map', { zoomControl: false, maxZoom: 19 }).setView(collegeCenter, 18);
+    L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+        maxZoom: 19,
+        attribution: 'Google Imagery'
+    }).addTo(map);
+
     const buildings = {
         "1": { name: "مبنى 1 - الأنشطة والمسرح", coords: [31.3885802, 37.3098097] },
         "2": { name: "مبنى 2 - الدعم الفني والشبكات", coords: [31.3884981, 37.3106472] },
@@ -100,20 +122,24 @@
         "8": { name: "مبنى 8 - العمادة وشؤون المتدربين", coords: [31.3898115, 37.3093759] }
     };
 
-    // نقاط التفاف (Nodes) في الممرات الفسيحة لتجاوز المباني
-    const safeNodes = [
-        [31.3893496, 37.3102727], // الساحة المركزية
-        [31.389100, 37.310700],  // ممر بين 2 و 4
-        [31.389800, 37.310200]   // ممر بين 6 و 7
-    ];
-
-    const keywordMap = { "بوفيه": "4", "كافتيريا": "4", "مصلى": "5", "عمادة": "8", "شؤون": "8", "مسرح": "1", "أنشطة": "1" };
-
-    const map = L.map('map', { zoomControl: false }).setView([31.3893496, 37.3102727], 18);
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 20 }).addTo(map);
-
     let userMarker, destMarker, routeLine, isNavigating = false;
     let lastUserCoords = null;
+    let userHeading = 0;
+
+    // طلب أذونات الموقع والبوصلة (خاصة للآيفون)
+    async function requestPermissions() {
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            try {
+                const permission = await DeviceOrientationEvent.requestPermission();
+                if (permission === 'granted') {
+                    window.addEventListener('deviceorientation', handleOrientation);
+                }
+            } catch (error) { console.error(error); }
+        } else {
+            window.addEventListener('deviceorientation', handleOrientation);
+        }
+        startApp();
+    }
 
     function startApp() {
         document.getElementById('welcome-screen').style.opacity = '0';
@@ -127,78 +153,71 @@
         }, 800);
     }
 
+    function handleOrientation(event) {
+        // حساب الزاوية (البوصلة)
+        userHeading = event.webkitCompassHeading || (360 - event.alpha);
+        if (userMarker) {
+            const beam = document.querySelector('.user-heading-beam');
+            if (beam) beam.style.transform = `rotate(${userHeading}deg)`;
+        }
+    }
+
     function updatePos(pos) {
         lastUserCoords = [pos.coords.latitude, pos.coords.longitude];
-        if (!userMarker) userMarker = L.circleMarker(lastUserCoords, { radius: 10, color: 'white', weight: 3, fillColor: '#2196F3', fillOpacity: 1 }).addTo(map);
-        else userMarker.setLatLng(lastUserCoords);
         
-        if (destMarker) calculateSmartPath(lastUserCoords, destMarker.getLatLng());
+        const userIcon = L.divIcon({
+            className: 'custom-user-icon',
+            html: `<div class="user-location-icon"><div class="user-heading-beam" style="transform: rotate(${userHeading}deg)"></div></div>`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+        });
+
+        if (!userMarker) {
+            userMarker = L.marker(lastUserCoords, { icon: userIcon }).addTo(map);
+        } else {
+            userMarker.setLatLng(lastUserCoords);
+            userMarker.setIcon(userIcon);
+        }
+        
+        if (destMarker) drawSafeRoute(lastUserCoords, destMarker.getLatLng());
         if (isNavigating) map.setView(lastUserCoords, 19);
     }
 
-    function calculateSmartPath(start, end) {
+    function drawSafeRoute(start, end) {
         if (routeLine) map.removeLayer(routeLine);
-        
-        // المبدأ: إذا كانت المسافة المباشرة تقطع مبنى (أقل من 50م من مركز مبنى آخر)، استخدم نقطة التفاف
-        let finalPath = [start, end];
-        let needsBypass = false;
-
-        for (let id in buildings) {
-            let bCoord = buildings[id].coords;
-            if (id !== destMarker.buildingId && map.distance(start, bCoord) < 35) {
-                needsBypass = true; break;
-            }
-        }
-
-        if (needsBypass) {
-            // اختيار أقرب نقطة ممر آمن
-            let bestNode = safeNodes[0];
-            let minDist = Infinity;
-            safeNodes.forEach(node => {
-                let d = map.distance(start, node);
-                if (d < minDist) { minDist = d; bestNode = node; }
-            });
-            finalPath = [start, bestNode, end];
-        }
-
-        routeLine = L.polyline(finalPath, { color: '#d4af37', weight: 7, opacity: 0.8, dashArray: '1, 12' }).addTo(map);
-        
-        const totalDist = map.distance(start, end).toFixed(0);
-        const displayDist = totalDist > 10 ? totalDist + " متر" : "وصلت لوجهتك";
-        if (isNavigating) document.getElementById('statusDist').innerText = displayDist;
+        routeLine = L.polyline([start, collegeCenter, end], { color: '#d4af37', weight: 7, opacity: 0.8, dashArray: '1, 12' }).addTo(map);
+        const dist = (map.distance(start, collegeCenter) + map.distance(collegeCenter, end)).toFixed(0);
+        document.getElementById('statusDist').innerText = dist;
     }
 
     document.getElementById('roomInput').addEventListener('input', function(e) {
-        let val = e.target.value.trim().toLowerCase();
-        for (let k in keywordMap) { if (val.includes(k)) { executeSearch(keywordMap[k], "key", k); return; } }
+        let val = e.target.value.trim().toUpperCase();
         if (val.length === 10) {
-            const bId = val[4]; const floor = val[5]; const isW = isNaN(val.charAt(9));
-            executeSearch(bId, isW ? "workshop" : "code", { f: floor, r: val.substring(isW ? 6 : 7) });
+            const bId = val[4]; const floor = val[5];
+            showDest(bId, { f: floor, r: val.substring(isNaN(val.charAt(9)) ? 6 : 7) });
         }
     });
 
-    function executeSearch(bId, type, data) {
-        const target = buildings[bId]; if (!target) return;
+    function showDest(id, data) {
+        const b = buildings[id]; if (!b) return;
         isNavigating = false;
         document.getElementById('status-bar').style.display = 'none';
         document.getElementById('infoCard').style.display = 'block';
-        document.getElementById('bldgName').innerText = target.name;
-        
+        document.getElementById('bldgName').innerText = b.name;
         if (destMarker) map.removeLayer(destMarker);
-        destMarker = L.marker(target.coords).addTo(map).bindPopup(target.name).openPopup();
-        destMarker.buildingId = bId;
-        map.flyTo(target.coords, 19);
-
-        let floorLabel = "";
+        destMarker = L.marker(b.coords).addTo(map).bindPopup(b.name).openPopup();
+        map.flyTo(b.coords, 19);
+        
+        let label = "";
         const fNames = { "0": "الأرضي", "1": "الأول", "2": "الثاني", "3": "الثالث" };
-        if (["1", "4", "5", "8"].includes(bId)) floorLabel = `وجهة المرفق: ${target.name}`;
-        else {
-            let desc = (bId === "7" && data.f === "3") ? "مكاتب إدارية وقاعات نظرية" : "قاعات نظرية / معامل / ورش";
-            if (bId === "6") desc = "ورش التقنية الميكانيكية";
-            floorLabel = `الدور ${fNames[data.f] || data.f} — ${desc}<br>رقم: ${data.r}`;
-        }
-        document.getElementById('targetDetail').innerHTML = `📌 <b>${floorLabel}</b>`;
-        if (lastUserCoords) calculateSmartPath(lastUserCoords, target.coords);
+        if (id === "7") {
+            if (data.f === "3") label = "مكاتب إدارية وقاعات نظرية";
+            else if (data.f === "2") label = "قاعات نظرية / معامل / ورش";
+            else label = "ورش التقنية الميكانيكية";
+        } else if (id === "6") label = "ورش التقنية الميكانيكية";
+        else label = data.f === "3" ? "مكاتب إدارة وقاعات نظرية" : "قاعات نظرية / معامل / ورش";
+        
+        document.getElementById('targetDetail').innerHTML = `📌 <b>الدور ${fNames[data.f] || data.f}</b><br>${label}<br>رقم: ${data.r}`;
     }
 
     function startJourney() {
