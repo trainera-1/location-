@@ -12,7 +12,7 @@
         }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg-dark); overflow: hidden; width: 100%; }
 
-        /* الشاشة الترحيبية - إعادة العنوان للفخامة والوضوح */
+        /* شاشة الترحيب */
         #welcome-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
@@ -20,17 +20,12 @@
             z-index: 9999; text-align: center; padding: 20px; box-sizing: border-box; transition: opacity 0.8s ease;
         }
         .app-title { 
-            font-size: 2.8rem; /* تكبير الحجم للوضوح */
-            font-weight: 900;
-            color: var(--gold-main);
+            font-size: 2.8rem; font-weight: 900; color: var(--gold-main);
             background: linear-gradient(to bottom, #f1d279 0%, #d4af37 50%, #aa8c2c 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0px 4px 15px rgba(212, 175, 55, 0.4); /* وهج ذهبي خفيف */
-            margin-bottom: 10px;
-            width: 100%;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 0px 4px 15px rgba(212, 175, 55, 0.4); margin-bottom: 10px; width: 100%;
         }
-        .start-btn { background: linear-gradient(45deg, var(--gold-dark), var(--gold-light)); color: #000; border: none; padding: 18px 70px; border-radius: 40px; font-size: 1.3rem; font-weight: bold; cursor: pointer; box-shadow: 0 5px 25px rgba(212, 175, 55, 0.4); transition: 0.3s; }
+        .start-btn { background: linear-gradient(45deg, var(--gold-dark), var(--gold-light)); color: #000; border: none; padding: 18px 70px; border-radius: 40px; font-size: 1.3rem; font-weight: bold; cursor: pointer; box-shadow: 0 5px 25px rgba(212, 175, 55, 0.4); }
 
         /* الواجهة الرئيسية */
         #main-app { display: none; height: 100%; flex-direction: column; position: relative; }
@@ -48,18 +43,16 @@
 
         #map { flex: 1; width: 100%; height: 100vh; }
 
-        /* أيقونة المستخدم مع شعاع التوجيه الذكي */
+        /* أيقونة المستخدم وشعاع التوجيه */
         .user-location-icon {
             position: relative; width: 20px; height: 20px;
             background: var(--blue-gps); border: 3px solid white;
             border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
         .user-heading-beam {
-            position: absolute; top: -45px; left: -15px;
-            width: 50px; height: 50px;
+            position: absolute; top: -45px; left: -15px; width: 50px; height: 50px;
             background: radial-gradient(ellipse at bottom, rgba(33, 150, 243, 0.6) 0%, rgba(33, 150, 243, 0) 70%);
-            clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
-            transform-origin: bottom center;
+            clip-path: polygon(50% 100%, 0% 0%, 100% 0%); transform-origin: bottom center;
             pointer-events: none; transition: transform 0.2s ease;
         }
 
@@ -116,8 +109,6 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     const collegeCenter = [31.3893496, 37.3102727];
-    
-    // الخريطة الجوية من جوجل (Satellite)
     const map = L.map('map', { zoomControl: false, maxZoom: 20 }).setView(collegeCenter, 18);
     L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20 }).addTo(map);
 
@@ -132,18 +123,12 @@
         "8": { name: "مبنى 8 - العمادة وشؤون المتدربين", coords: [31.3898115, 37.3093759] }
     };
 
-    const keywordMap = { 
-        "بوفيه": "4", "كافتيريا": "4", "مطعم": "4", 
-        "مصلى": "5", "صلاة": "5", "مسجد": "5", 
-        "عمادة": "8", "شؤون": "8", "إدارة": "8",
-        "مسرح": "1", "أنشطة": "1"
-    };
+    const keywordMap = { "بوفيه": "4", "كافتيريا": "4", "مصلى": "5", "عمادة": "8", "مسرح": "1" };
 
     let userMarker, destMarker, routeLine, isNavigating = false;
     let lastUserCoords = null;
     let userHeading = 0;
 
-    // تفعيل أذونات البوصلة والموقع
     async function requestPermissions() {
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
             try {
@@ -195,20 +180,35 @@
         const dist = map.distance(start, end).toFixed(0);
         const txt = dist < 6 ? "وصلت لوجهتك" : dist + " متر";
         if (isNavigating) document.getElementById('statusDist').innerText = txt;
-        else {
-            const cp = document.getElementById('infoCard').querySelector('div');
-            // تحديث المسافة في البطاقة إذا لزم الأمر
-        }
     }
 
     document.getElementById('roomInput').addEventListener('input', function(e) {
-        let val = e.target.value.trim().toLowerCase();
+        let val = e.target.value.trim().toUpperCase();
         for (let k in keywordMap) {
             if (val.includes(k)) { executeSearch(keywordMap[k], "key", k); return; }
         }
         if (val.length === 10) {
-            const bId = val[4]; const floor = val[5];
-            executeSearch(bId, "code", { f: floor, r: val.substring(isNaN(val.charAt(9)) ? 6 : 7) });
+            const bId = val[4]; 
+            const floor = val[5]; // الرقم السادس (الدور)
+            const char7 = val[6]; // الرقم السابع
+            const char8 = val[7]; // الرقم الثامن
+            const isWorkshop = isNaN(val.charAt(9)); // ينتهي بحرف؟
+
+            if (isWorkshop) {
+                // حالة الورشة: مقارنة السادس مع السابع
+                if (floor !== char7) {
+                    alert("تنبيه: الرقم السادس (الدور) لا يتطابق مع الرقم السابع (ترميز الورشة).");
+                    return;
+                }
+            } else {
+                // حالة القاعة: مقارنة السادس مع الثامن
+                if (floor !== char8) {
+                    alert("تنبيه: الرقم السادس (الدور) لا يتطابق مع الرقم الثامن (رقم القاعة).");
+                    return;
+                }
+            }
+
+            executeSearch(bId, isWorkshop ? "workshop" : "code", { f: floor, r: val.substring(isWorkshop ? 6 : 7) });
         }
     });
 
@@ -227,7 +227,7 @@
         if (type === "key") floorTxt = `وجهة المرفق: ${b.name}`;
         else {
             let desc = (bId === "7" && data.f === "3") ? "مكاتب إدارية" : "قاعات / معامل";
-            if (bId === "6") desc = "ورش الميكانيكا";
+            if (bId === "6" || type === "workshop") desc = "ورش الميكانيكا";
             floorTxt = `الدور ${fNames[data.f] || data.f} — ${desc}<br>رقم: ${data.r}`;
         }
         document.getElementById('targetDetail').innerHTML = `📌 <b>${floorTxt}</b>`;
