@@ -12,7 +12,7 @@
         }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg-dark); overflow: hidden; width: 100%; }
 
-        /* شاشة الترحيب */
+        /* شاشة الترحيب - العنوان الذهبي الواضح */
         #welcome-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
@@ -109,6 +109,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     const collegeCenter = [31.3893496, 37.3102727];
+    // إعداد الخريطة
     const map = L.map('map', { zoomControl: false, maxZoom: 20 }).setView(collegeCenter, 18);
     L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20 }).addTo(map);
 
@@ -171,7 +172,12 @@
         else { userMarker.setLatLng(lastUserCoords); userMarker.setIcon(userIcon); }
         
         if (destMarker) drawDirectRoute(lastUserCoords, destMarker.getLatLng());
-        if (isNavigating) map.setView(lastUserCoords, 19);
+        
+        // الحل البرمجي لمشكلة الزوم:
+        // نستخدم map.getZoom() للحفاظ على مستوى التكبير الذي اختاره المتدرب حالياً
+        if (isNavigating) {
+            map.setView(lastUserCoords, map.getZoom()); 
+        }
     }
 
     function drawDirectRoute(start, end) {
@@ -189,25 +195,16 @@
         }
         if (val.length === 10) {
             const bId = val[4]; 
-            const floor = val[5]; // الرقم السادس (الدور)
-            const char7 = val[6]; // الرقم السابع
-            const char8 = val[7]; // الرقم الثامن
-            const isWorkshop = isNaN(val.charAt(9)); // ينتهي بحرف؟
+            const floor = val[5]; 
+            const char7 = val[6]; 
+            const char8 = val[7]; 
+            const isWorkshop = isNaN(val.charAt(9));
 
             if (isWorkshop) {
-                // حالة الورشة: مقارنة السادس مع السابع
-                if (floor !== char7) {
-                    alert("تنبيه: الرقم السادس (الدور) لا يتطابق مع الرقم السابع (ترميز الورشة).");
-                    return;
-                }
+                if (floor !== char7) { alert("تنبيه: الرقم السادس (الدور) لا يتطابق مع السابع (ترميز الورشة)."); return; }
             } else {
-                // حالة القاعة: مقارنة السادس مع الثامن
-                if (floor !== char8) {
-                    alert("تنبيه: الرقم السادس (الدور) لا يتطابق مع الرقم الثامن (رقم القاعة).");
-                    return;
-                }
+                if (floor !== char8) { alert("تنبيه: الرقم السادس (الدور) لا يتطابق مع الثامن (رقم القاعة)."); return; }
             }
-
             executeSearch(bId, isWorkshop ? "workshop" : "code", { f: floor, r: val.substring(isWorkshop ? 6 : 7) });
         }
     });
@@ -239,10 +236,12 @@
         document.getElementById('infoCard').style.display = 'none';
         document.getElementById('status-bar').style.display = 'block';
         document.getElementById('statusBldg').innerText = document.getElementById('bldgName').innerText;
-        centerOnUser();
+        centerOnUser(); // عند البدء فقط نذهب للزوم 19 كوضع افتراضي
     }
 
-    function centerOnUser() { if (lastUserCoords) map.setView(lastUserCoords, 19); }
+    function centerOnUser() { 
+        if (lastUserCoords) map.setView(lastUserCoords, 19); 
+    }
 </script>
 </body>
 </html>
