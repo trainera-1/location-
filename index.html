@@ -25,14 +25,13 @@
 
         /* الواجهة الرئيسية */
         #main-app { display: none; height: 100%; flex-direction: column; position: relative; }
-        
         .search-nav {
             position: absolute; top: 15px; left: 12px; right: 12px; z-index: 1000;
             background: rgba(0, 0, 0, 0.9); padding: 4px; border-radius: 16px; border: 2px solid var(--gold-main);
         }
         input { width: 100%; padding: 14px; border: none; font-size: 1.15rem; text-align: center; background: transparent; color: var(--gold-light); outline: none; font-weight: bold; }
 
-        /* شريط الحالة العلوي النحيف */
+        /* شريط الحالة العلوي */
         #status-bar {
             position: absolute; top: 90px; left: 12px; right: 12px; z-index: 999;
             background: rgba(0, 0, 0, 0.85); border: 1px solid var(--gold-main);
@@ -76,7 +75,7 @@
 
     <div id="status-bar">
         <div style="color: var(--gold-light); font-weight: bold; font-size: 0.95rem;">📍 <span id="statusBldg"></span></div>
-        <div style="color: #27ae60; font-size: 0.85rem; font-weight: bold; margin-top: 4px;">المسافة المتبقية: <span id="statusDist">0</span> متر</div>
+        <div style="color: #27ae60; font-size: 0.85rem; font-weight: bold; margin-top: 4px;">المسافة المتبقية: <span id="statusDist">جاري التحديد...</span></div>
     </div>
 
     <div class="info-card" id="infoCard">
@@ -99,7 +98,6 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     const collegeCenter = [31.3893496, 37.3102727];
-    
     const buildings = {
         "1": { name: "مبنى 1 - مبنى الأنشطة والمسرح", coords: [31.3885802, 37.3098097], dept: "الأنشطة", desc: "يضم المسرح الرئيسي وقاعات الفعاليات والأنشطة الطلابية." },
         "2": { name: "مبنى 2 - قسم الدعم الفني وأنظمة الشبكات", coords: [31.3884981, 37.3106472], dept: "الدعم الفني والشبكات", desc: "معامل الحاسب الآلي وصيانة الشبكات والدعم التقني." },
@@ -117,6 +115,7 @@
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 20 }).addTo(map);
 
     let userMarker, destMarker, routeLine, isNavigating = false;
+    let lastUserCoords = null;
 
     function startApp() {
         document.getElementById('welcome-screen').style.opacity = '0';
@@ -124,29 +123,56 @@
             document.getElementById('welcome-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'flex';
             map.invalidateSize();
+            // تفعيل نظام المراقبة عالي الدقة
             if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(updatePos, null, { enableHighAccuracy: true });
+                navigator.geolocation.watchPosition(updatePos, (err) => {
+                    console.log("خطأ في GPS، جاري المحاولة...");
+                }, { 
+                    enableHighAccuracy: true, 
+                    timeout: 5000, 
+                    maximumAge: 0 
+                });
             }
         }, 800);
     }
 
     function updatePos(pos) {
-        const p = [pos.coords.latitude, pos.coords.longitude];
-        if (!userMarker) userMarker = L.circleMarker(p, { radius: 10, color: 'white', weight: 3, fillColor: '#2196F3', fillOpacity: 1 }).addTo(map);
-        else userMarker.setLatLng(p);
+        lastUserCoords = [pos.coords.latitude, pos.coords.longitude];
         
+        if (!userMarker) {
+            userMarker = L.circleMarker(lastUserCoords, { radius: 10, color: 'white', weight: 3, fillColor: '#2196F3', fillOpacity: 1 }).addTo(map);
+        } else {
+            userMarker.setLatLng(lastUserCoords);
+        }
+        
+        // تحديث السهم والمسافة لحظياً مع كل حركة
+        if (destMarker) {
+            updateLiveRoute(lastUserCoords, destMarker.getLatLng());
+        }
+
         if (isNavigating) {
-            map.setView(p, 19);
-            if (destMarker) drawSafeRoute(p, destMarker.getLatLng());
+            map.setView(lastUserCoords, 19);
         }
     }
 
-    function drawSafeRoute(start, end) {
+    function updateLiveRoute(start, end) {
         if (routeLine) map.removeLayer(routeLine);
-        // التوجيه عبر الساحة المركزية (النسخة المستقرة)
-        routeLine = L.polyline([start, collegeCenter, end], { color: '#d4af37', weight: 7, opacity: 0.8, dashArray: '1, 12' }).addTo(map);
-        const dist = (map.distance(start, collegeCenter) + map.distance(collegeCenter, end)).toFixed(0);
-        document.getElementById('statusDist').innerText = dist;
+        
+        // رسم السهم (الخط الملاحي) مباشرة بين المتدرب والقاعة
+        routeLine = L.polyline([start, end], { 
+            color: '#d4af37', 
+            weight: 8, 
+            opacity: 0.8, 
+            dashArray: '1, 15', 
+            lineCap: 'round' 
+        }).addTo(map);
+
+        const dist = map.distance(start, end).toFixed(0);
+        const displayDist = dist < 5 ? "وصلت لوجهتك" : dist + " متر";
+        
+        if (isNavigating) {
+            document.getElementById('statusDist').innerText = displayDist;
+        }
     }
 
     document.getElementById('roomInput').addEventListener('input', function(e) {
@@ -166,7 +192,8 @@
         document.getElementById('status-bar').style.display = 'none';
         document.getElementById('infoCard').style.display = 'block';
         document.getElementById('bldgName').innerText = target.name;
-        document.getElementById('bldgDesc').innerText = target.desc;
+        document.getElementById('bldgDesc').innerText = target.dept;
+        
         if (destMarker) map.removeLayer(destMarker);
         destMarker = L.marker(target.coords).addTo(map).bindPopup(target.name).openPopup();
         map.flyTo(target.coords, 19);
@@ -191,6 +218,8 @@
             floorLabel += `<br>${type === 'workshop' ? 'رقم الورشة' : 'رقم القاعة'}: ${data.r}`;
         }
         document.getElementById('targetDetail').innerHTML = `📌 <b>${floorLabel}</b>`;
+        
+        if (lastUserCoords) updateLiveRoute(lastUserCoords, target.coords);
     }
 
     function startJourney() {
@@ -201,7 +230,7 @@
         centerOnUser();
     }
 
-    function centerOnUser() { if (userMarker) map.setView(userMarker.getLatLng(), 19); }
+    function centerOnUser() { if (lastUserCoords) map.setView(lastUserCoords, 19); }
 </script>
 </body>
 </html>
