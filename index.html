@@ -11,639 +11,852 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
-        /* ===== المتغيرات الأساسية ===== */
-        :root {
-            --gold-light: #f1d279;
-            --gold-main:  #d4af37;
-            --gold-dark:  #aa8c2c;
-            --bg-dark:    #0b0b0b;
-            --text-light: #ffffff;
-            --blue-gps:   #2196F3;
-            --success:    #27ae60;
-            --font:       'Tajawal', 'Segoe UI', Tahoma, sans-serif;
-        }
+/* ── المتغيرات ── */
+:root{
+    --gold-light:#f1d279; --gold-main:#d4af37; --gold-dark:#aa8c2c;
+    --bg:#0b0b0b; --text:#fff; --blue:#2196F3; --green:#27ae60;
+    --font:'Tajawal',sans-serif; --r:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);overflow:hidden;-webkit-tap-highlight-color:transparent}
 
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body {
-            height: 100%; width: 100%;
-            font-family: var(--font);
-            background: var(--bg-dark);
-            overflow: hidden;
-            -webkit-tap-highlight-color: transparent;
-        }
+/* ── شاشة الترحيب ── */
+#welcome{position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 20%,#1c1600,#000 65%);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;transition:opacity .8s;overflow:hidden}
+.orb{position:absolute;border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(212,175,55,.18),transparent 70%);animation:orb-p 5s ease-in-out infinite}
+.orb1{width:320px;height:320px;top:-100px;right:-80px}
+.orb2{width:220px;height:220px;bottom:60px;left:-60px;animation-delay:2s}
+.orb3{width:160px;height:160px;bottom:200px;right:10px;animation-delay:4s}
+@keyframes orb-p{0%,100%{transform:scale(1);opacity:.35}50%{transform:scale(1.25);opacity:.75}}
+.w-logo{width:88px;height:88px;background:linear-gradient(135deg,var(--gold-dark),var(--gold-light));border-radius:24px;display:flex;align-items:center;justify-content:center;font-size:3rem;margin-bottom:22px;z-index:1;box-shadow:0 0 50px rgba(212,175,55,.5);animation:float 3.5s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.w-title{font-size:2.6rem;font-weight:900;background:linear-gradient(to bottom,#f9e49a,#d4af37 50%,#7a5e10);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;z-index:1;margin-bottom:10px;line-height:1.25}
+.w-sub{color:#777;font-size:1rem;line-height:1.7;z-index:1;margin-bottom:38px}
+.w-sub span{color:var(--gold-main);font-weight:700}
+.w-btn{background:linear-gradient(135deg,var(--gold-dark),var(--gold-light));color:#000;border:none;padding:16px 64px;border-radius:50px;font-size:1.2rem;font-weight:900;cursor:pointer;font-family:var(--font);z-index:1;box-shadow:0 6px 28px rgba(212,175,55,.55);transition:transform .15s,box-shadow .15s}
+.w-btn:active{transform:scale(.96)}
+.w-sig{position:absolute;bottom:22px;color:#444;font-size:.85rem;z-index:1}.w-sig span{color:var(--gold-dark)}
 
-        /* ===== شاشة الترحيب ===== */
-        #welcome-screen {
-            position: fixed; inset: 0; z-index: 9999;
-            background: radial-gradient(ellipse at 50% 20%, #1c1600 0%, #000 65%);
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            text-align: center; padding: 30px;
-            transition: opacity 0.8s ease;
-            overflow: hidden;
-        }
+/* ── التطبيق الرئيسي ── */
+#app{display:none;height:100%;flex-direction:column;position:relative}
 
-        /* فقاعات الخلفية */
-        .orb {
-            position: absolute; border-radius: 50%; pointer-events: none;
-            background: radial-gradient(circle, rgba(212,175,55,0.18) 0%, transparent 70%);
-            animation: orb-pulse 5s ease-in-out infinite;
-        }
-        .orb-1 { width: 320px; height: 320px; top: -100px; right: -80px; animation-delay: 0s; }
-        .orb-2 { width: 220px; height: 220px; bottom: 60px;  left:  -60px; animation-delay: 2s; }
-        .orb-3 { width: 160px; height: 160px; bottom: 200px; right:  10px; animation-delay: 4s; }
-        @keyframes orb-pulse {
-            0%,100% { transform: scale(1);   opacity: .35; }
-            50%      { transform: scale(1.25); opacity: .75; }
-        }
+/* ── شريط البحث ── */
+.search-nav{position:absolute;top:15px;left:12px;right:12px;z-index:1000;background:rgba(0,0,0,.92);padding:4px;border-radius:var(--r);border:2px solid var(--gold-main);backdrop-filter:blur(10px)}
+#roomInput{width:100%;padding:13px;border:none;font-size:1.1rem;text-align:center;background:transparent;color:var(--gold-light);outline:none;font-weight:700;font-family:var(--font)}
+#roomInput::placeholder{color:#444;font-weight:500}
 
-        /* شعار التطبيق */
-        .welcome-logo {
-            width: 88px; height: 88px;
-            background: linear-gradient(135deg, var(--gold-dark), var(--gold-light));
-            border-radius: 24px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 3rem; margin-bottom: 22px; position: relative; z-index: 1;
-            box-shadow: 0 0 50px rgba(212,175,55,.5);
-            animation: logo-float 3.5s ease-in-out infinite;
-        }
-        @keyframes logo-float {
-            0%,100% { transform: translateY(0);   }
-            50%      { transform: translateY(-10px); }
-        }
+/* ── شريط التنقل ── */
+#status-bar{position:absolute;top:88px;left:12px;right:12px;z-index:999;background:rgba(0,0,0,.9);border:1px solid var(--gold-main);border-radius:14px;padding:10px 14px;display:none;backdrop-filter:blur(8px)}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sinfo{flex:1}
+.sbldg{color:var(--gold-light);font-weight:800;font-size:.92rem}
+.sdist{color:var(--green);font-size:.82rem;margin-top:3px;font-weight:700}
+.seta{color:#888;font-size:.75rem;margin-top:2px}
+.cancel-btn{background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.4);color:#e74c3c;width:36px;height:36px;border-radius:8px;font-size:1rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
 
-        .app-title {
-            font-size: 2.6rem; font-weight: 900; line-height: 1.25;
-            background: linear-gradient(to bottom, #f9e49a 0%, #d4af37 50%, #7a5e10 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            background-clip: text; position: relative; z-index: 1; margin-bottom: 10px;
-        }
+/* ── الخريطة ── */
+#sat-view{position:absolute;inset:0;z-index:1}
+#map{width:100%;height:100%}
 
-        .app-subtitle {
-            color: #777; font-size: 1rem; line-height: 1.7;
-            position: relative; z-index: 1; margin-bottom: 38px;
-        }
-        .app-subtitle span { color: var(--gold-main); font-weight: 700; }
+/* ── النموذج ثلاثي الأبعاد ── */
+#view3d{position:absolute;inset:0;z-index:2;display:none;flex-direction:column}
+#three-canvas{width:100%;height:100%;display:block;touch-action:none}
+/* شريط ٣D العلوي */
+.bar3d{position:absolute;top:88px;left:12px;right:12px;z-index:10;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hint3d{background:rgba(0,0,0,.75);color:#888;font-size:.75rem;padding:6px 12px;border-radius:20px;border:1px solid #222;text-align:center;flex:1}
+/* أسماء المباني فوق النموذج */
+#labels3d{position:absolute;inset:0;pointer-events:none;z-index:5}
 
-        .start-btn {
-            background: linear-gradient(135deg, var(--gold-dark), var(--gold-light));
-            color: #000; border: none; padding: 16px 64px;
-            border-radius: 50px; font-size: 1.2rem; font-weight: 900;
-            cursor: pointer; font-family: var(--font); position: relative; z-index: 1;
-            box-shadow: 0 6px 28px rgba(212,175,55,.55);
-            transition: transform .15s, box-shadow .15s;
-        }
-        .start-btn:active { transform: scale(.96); box-shadow: 0 2px 10px rgba(212,175,55,.3); }
+/* ── بطاقة معلومات المبنى ── */
+.info-card{position:absolute;bottom:22px;left:12px;right:12px;z-index:1000;background:rgba(14,14,14,.98);border:1px solid rgba(212,175,55,.3);border-radius:20px;padding:18px;display:none;box-shadow:0 -5px 30px rgba(0,0,0,.7);backdrop-filter:blur(10px)}
+.ic-hdr{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.ic-icon{width:48px;height:48px;border-radius:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.6rem}
+.ic-name{color:var(--gold-light);font-size:1.1rem;font-weight:900}
+.ic-cat{color:#555;font-size:.8rem;margin-top:3px}
+.ic-detail{background:rgba(255,255,255,.04);border:1px solid rgba(212,175,55,.15);border-radius:12px;padding:12px 14px;color:#ccc;font-size:.92rem;line-height:1.7}
+.ic-meta{display:flex;gap:10px;margin-top:12px}
+.ic-badge{flex:1;background:rgba(255,255,255,.04);border:1px solid #222;border-radius:10px;padding:9px;text-align:center}
+.badge-v{color:var(--gold-main);font-size:1.1rem;font-weight:900}
+.badge-l{color:#555;font-size:.72rem;margin-top:2px}
+.go-btn{background:linear-gradient(135deg,#1a6e2e,var(--green));color:#fff;border:none;padding:15px;border-radius:14px;font-weight:900;width:100%;margin-top:14px;font-size:1.1rem;cursor:pointer;font-family:var(--font);box-shadow:0 4px 18px rgba(39,174,96,.35)}
 
-        .signature {
-            position: absolute; bottom: 22px;
-            color: #444; font-size: .85rem; z-index: 1;
-        }
-        .signature span { color: var(--gold-dark); }
+/* ── أزرار الجانب ── */
+.side-ctrl{position:absolute;top:50%;right:15px;transform:translateY(-50%);z-index:1000;display:flex;flex-direction:column;gap:10px}
+.btn-s{background:rgba(0,0,0,.88);color:var(--gold-main);border:1.5px solid rgba(212,175,55,.5);width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;font-family:var(--font);backdrop-filter:blur(6px);transition:all .15s}
+.btn-s:active{background:rgba(212,175,55,.15);transform:scale(.93)}
+.btn-s.active{background:rgba(212,175,55,.2);border-color:var(--gold-main)}
 
-        /* ===== الواجهة الرئيسية ===== */
-        #main-app { display: none; height: 100%; flex-direction: column; position: relative; }
+/* ── أيقونة المستخدم ── */
+.user-dot{position:relative;width:20px;height:20px;background:var(--blue);border:3px solid #fff;border-radius:50%;box-shadow:0 0 12px rgba(33,150,243,.7)}
+.user-beam{position:absolute;top:-45px;left:-15px;width:50px;height:50px;background:radial-gradient(ellipse at bottom,rgba(33,150,243,.6),rgba(33,150,243,0) 70%);clip-path:polygon(50% 100%,0% 0%,100% 0%);transform-origin:bottom center;pointer-events:none;transition:transform .2s}
+@keyframes pulse{0%{transform:scale(1);opacity:.7}100%{transform:scale(3.5);opacity:0}}
+.pulse-ring{position:absolute;width:20px;height:20px;border-radius:50%;background:rgba(33,150,243,.25);animation:pulse 2s ease-out infinite;top:0;left:0;pointer-events:none}
 
-        /* شريط البحث */
-        .search-nav {
-            position: absolute; top: 15px; left: 12px; right: 12px; z-index: 1000;
-            background: rgba(0,0,0,.92); padding: 4px;
-            border-radius: 16px; border: 2px solid var(--gold-main);
-            backdrop-filter: blur(10px);
-        }
-        input {
-            width: 100%; padding: 13px; border: none;
-            font-size: 1.1rem; text-align: center;
-            background: transparent; color: var(--gold-light);
-            outline: none; font-weight: 700; font-family: var(--font);
-        }
-        input::placeholder { color: #444; font-weight: 500; }
+/* ── إشعار الوصول ── */
+#arrival{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);z-index:9500;background:linear-gradient(135deg,#155724,var(--green));border-radius:24px;padding:34px 44px;text-align:center;box-shadow:0 0 70px rgba(39,174,96,.7);transition:transform .45s cubic-bezier(.175,.885,.32,1.275);min-width:260px}
+#arrival.show{transform:translate(-50%,-50%) scale(1)}
+.ar-icon{font-size:3.8rem;display:block;margin-bottom:12px}
+.ar-title{color:#fff;font-size:1.5rem;font-weight:900}
+.ar-sub{color:rgba(255,255,255,.8);font-size:.92rem;margin-top:6px}
+.ar-close{margin-top:22px;background:rgba(255,255,255,.18);border:none;color:#fff;padding:11px 34px;border-radius:30px;font-family:var(--font);font-size:1rem;cursor:pointer;font-weight:700}
 
-        /* شريط الحالة أثناء التنقل */
-        #status-bar {
-            position: absolute; top: 88px; left: 12px; right: 12px; z-index: 999;
-            background: rgba(0,0,0,.9); border: 1px solid var(--gold-main);
-            border-radius: 14px; padding: 10px 14px;
-            display: none; backdrop-filter: blur(8px);
-        }
-        .status-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-        .status-info { flex: 1; }
-        .status-bldg  { color: var(--gold-light); font-weight: 800; font-size: .92rem; }
-        .status-dist  { color: var(--success); font-size: .82rem; margin-top: 3px; font-weight: 700; }
-        .status-eta   { color: #888; font-size: .75rem; margin-top: 2px; }
-        .cancel-btn {
-            background: rgba(231,76,60,.15); border: 1px solid rgba(231,76,60,.4);
-            color: #e74c3c; width: 36px; height: 36px; border-radius: 8px;
-            font-size: 1rem; cursor: pointer; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center;
-        }
+/* ── Toast ── */
+#toast{position:fixed;bottom:110px;left:50%;transform:translateX(-50%) translateY(16px);background:rgba(0,0,0,.92);color:#fff;padding:11px 24px;border-radius:30px;font-size:.9rem;z-index:8000;opacity:0;transition:all .3s;pointer-events:none;border:1px solid rgba(212,175,55,.3);white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-        /* الخريطة */
-        #map { flex: 1; width: 100%; height: 100vh; }
-
-        /* أيقونة المستخدم */
-        .user-location-icon {
-            position: relative; width: 20px; height: 20px;
-            background: var(--blue-gps); border: 3px solid white;
-            border-radius: 50%; box-shadow: 0 0 12px rgba(33,150,243,.7);
-        }
-        .user-heading-beam {
-            position: absolute; top: -45px; left: -15px; width: 50px; height: 50px;
-            background: radial-gradient(ellipse at bottom, rgba(33,150,243,.6) 0%, rgba(33,150,243,0) 70%);
-            clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
-            transform-origin: bottom center; pointer-events: none; transition: transform .2s ease;
-        }
-        @keyframes pulse-ring {
-            0%   { transform: scale(1);   opacity: .7; }
-            100% { transform: scale(3.5); opacity: 0; }
-        }
-        .pulse-ring {
-            position: absolute; width: 20px; height: 20px; border-radius: 50%;
-            background: rgba(33,150,243,.25);
-            animation: pulse-ring 2s ease-out infinite;
-            top: 0; left: 0; pointer-events: none;
-        }
-
-        /* بطاقة المعلومات */
-        .info-card {
-            position: absolute; bottom: 22px; left: 12px; right: 12px; z-index: 1000;
-            background: rgba(14,14,14,.98); border: 1px solid rgba(212,175,55,.3);
-            border-radius: 20px; padding: 18px; display: none;
-            box-shadow: 0 -5px 30px rgba(0,0,0,.7);
-            backdrop-filter: blur(10px);
-        }
-        .info-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-        .info-bldg-icon {
-            width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center; font-size: 1.6rem;
-        }
-        .info-bldg-name { color: var(--gold-light); font-size: 1.1rem; font-weight: 900; }
-        .info-bldg-cat  { color: #555; font-size: .8rem; margin-top: 3px; }
-
-        .info-detail {
-            background: rgba(255,255,255,.04); border: 1px solid rgba(212,175,55,.15);
-            border-radius: 12px; padding: 12px 14px;
-            color: #ccc; font-size: .92rem; line-height: 1.7;
-        }
-
-        /* شارات المسافة والوقت */
-        .info-meta { display: flex; gap: 10px; margin-top: 12px; }
-        .info-badge {
-            flex: 1; background: rgba(255,255,255,.04); border: 1px solid #222;
-            border-radius: 10px; padding: 9px; text-align: center;
-        }
-        .badge-val { color: var(--gold-main); font-size: 1.1rem; font-weight: 900; }
-        .badge-lbl { color: #555; font-size: .72rem; margin-top: 2px; }
-
-        .go-btn {
-            background: linear-gradient(135deg, #1a6e2e, var(--success));
-            color: white; border: none; padding: 15px; border-radius: 14px;
-            font-weight: 900; width: 100%; margin-top: 14px; font-size: 1.1rem;
-            cursor: pointer; font-family: var(--font);
-            box-shadow: 0 4px 18px rgba(39,174,96,.35);
-        }
-
-        /* أزرار الجانب */
-        .side-controls {
-            position: absolute; top: 50%; right: 15px; transform: translateY(-50%);
-            z-index: 1000; display: flex; flex-direction: column; gap: 10px;
-        }
-        .btn-side {
-            background: rgba(0,0,0,.88); color: var(--gold-main);
-            border: 1.5px solid rgba(212,175,55,.5);
-            width: 46px; height: 46px; border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.1rem; cursor: pointer; font-family: var(--font);
-            backdrop-filter: blur(6px); transition: all .15s;
-        }
-        .btn-side:active { background: rgba(212,175,55,.15); transform: scale(.93); }
-
-        /* ===== إشعار الوصول ===== */
-        #arrival-notif {
-            position: fixed; top: 50%; left: 50%;
-            transform: translate(-50%, -50%) scale(0);
-            z-index: 9500;
-            background: linear-gradient(135deg, #155724, var(--success));
-            border-radius: 24px; padding: 34px 44px; text-align: center;
-            box-shadow: 0 0 70px rgba(39,174,96,.7);
-            transition: transform .45s cubic-bezier(.175,.885,.32,1.275);
-            min-width: 260px;
-        }
-        #arrival-notif.show { transform: translate(-50%, -50%) scale(1); }
-        .arrival-icon  { font-size: 3.8rem; display: block; margin-bottom: 12px; }
-        .arrival-title { color: #fff; font-size: 1.5rem; font-weight: 900; }
-        .arrival-sub   { color: rgba(255,255,255,.8); font-size: .92rem; margin-top: 6px; }
-        .arrival-close {
-            margin-top: 22px; background: rgba(255,255,255,.18);
-            border: none; color: #fff; padding: 11px 34px;
-            border-radius: 30px; font-family: var(--font);
-            font-size: 1rem; cursor: pointer; font-weight: 700;
-        }
-
-        /* ===== toast ===== */
-        #toast {
-            position: fixed; bottom: 110px; left: 50%;
-            transform: translateX(-50%) translateY(16px);
-            background: rgba(0,0,0,.92); color: #fff;
-            padding: 11px 24px; border-radius: 30px; font-size: .9rem;
-            z-index: 8000; opacity: 0; transition: all .3s; pointer-events: none;
-            border: 1px solid rgba(212,175,55,.3); white-space: nowrap;
-        }
-        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-        /* ===== توقيع ===== */
-        .app-sig {
-            position: absolute; bottom: 34px; left: 50%; transform: translateX(-50%);
-            color: var(--gold-main); font-weight: 700; font-size: 1rem; z-index: 1000;
-            pointer-events: none; white-space: nowrap;
-            text-shadow: 0 2px 8px rgba(0,0,0,.8);
-        }
+/* توقيع */
+.app-sig{position:absolute;bottom:34px;left:50%;transform:translateX(-50%);color:var(--gold-main);font-weight:700;font-size:.95rem;z-index:1000;pointer-events:none;white-space:nowrap;text-shadow:0 2px 8px rgba(0,0,0,.8)}
     </style>
 </head>
 <body>
 
-<!-- ===== شاشة الترحيب ===== -->
-<div id="welcome-screen">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-
-    <div class="welcome-logo">🧭</div>
-    <h1 class="app-title">بوصلة المتدرب التقني</h1>
-    <p class="app-subtitle">
-        مرحباً بك في<br>
-        <span>الكلية التقنية بالقريات</span><br>
-        دليلك الذكي للوصول بدقة واحترافية
-    </p>
-    <button class="start-btn" onclick="requestPermissions()">ابدأ الآن ←</button>
-    <div class="signature">من إعداد: <span>م/ عادل الشمري</span></div>
+<!-- ══ شاشة الترحيب ══ -->
+<div id="welcome">
+    <div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
+    <div class="w-logo">🧭</div>
+    <h1 class="w-title">بوصلة المتدرب التقني</h1>
+    <p class="w-sub">مرحباً بك في<br><span>الكلية التقنية بالقريات</span><br>دليلك الذكي للوصول بدقة واحترافية</p>
+    <button class="w-btn" onclick="requestPerms()">ابدأ الآن ←</button>
+    <div class="w-sig">من إعداد: <span>م/ عادل الشمري</span></div>
 </div>
 
-<!-- ===== الواجهة الرئيسية ===== -->
-<div id="main-app">
+<!-- ══ التطبيق ══ -->
+<div id="app">
 
-    <div class="search-nav">
+    <!-- شريط البحث (مشترك بين الوضعين) -->
+    <div class="search-nav" style="z-index:2000">
         <input type="text" id="roomInput"
-               placeholder="🔍  بحث (مصلى، مسرح، أو رقم القاعة...)"
+               placeholder="🔍  بحث (مصلى، مسرح، رقم القاعة...)"
                maxlength="20" autocomplete="off">
     </div>
 
-    <!-- شريط الحالة أثناء التنقل -->
+    <!-- شريط التنقل -->
     <div id="status-bar">
-        <div class="status-row">
-            <div class="status-info">
-                <div class="status-bldg">📍 <span id="statusBldg"></span></div>
-                <div class="status-dist" id="statusDist">جاري التحديد...</div>
-                <div class="status-eta"  id="statusEta"></div>
+        <div class="srow">
+            <div class="sinfo">
+                <div class="sbldg">📍 <span id="sBldg"></span></div>
+                <div class="sdist" id="sDist">جاري التحديد...</div>
+                <div class="seta"  id="sEta"></div>
             </div>
-            <button class="cancel-btn" onclick="cancelJourney()" title="إلغاء الرحلة">✕</button>
+            <button class="cancel-btn" onclick="cancelJourney()">✕</button>
         </div>
     </div>
 
-    <div id="map"></div>
+    <!-- ── وضع الخريطة الفضائية ── -->
+    <div id="sat-view">
+        <div id="map"></div>
+    </div>
+
+    <!-- ── وضع النموذج ثلاثي الأبعاد ── -->
+    <div id="view3d">
+        <canvas id="three-canvas"></canvas>
+        <div id="labels3d"></div>
+        <div class="bar3d">
+            <div class="hint3d">👆 اسحب للتدوير • قرصة للتكبير • اضغط على المبنى للتفاصيل</div>
+        </div>
+    </div>
 
     <!-- بطاقة المعلومات -->
     <div class="info-card" id="infoCard">
-        <div class="info-header">
-            <div class="info-bldg-icon" id="infoBldgIcon"></div>
+        <div class="ic-hdr">
+            <div class="ic-icon" id="ic-icon"></div>
             <div>
-                <div class="info-bldg-name" id="bldgName"></div>
-                <div class="info-bldg-cat"  id="bldgCat"></div>
+                <div class="ic-name" id="ic-name"></div>
+                <div class="ic-cat"  id="ic-cat"></div>
             </div>
         </div>
-        <div class="info-detail" id="targetDetail"></div>
-        <div class="info-meta">
-            <div class="info-badge">
-                <div class="badge-val" id="metaDist">—</div>
-                <div class="badge-lbl">المسافة (م)</div>
-            </div>
-            <div class="info-badge">
-                <div class="badge-val" id="metaEta">—</div>
-                <div class="badge-lbl">وقت الوصول</div>
-            </div>
+        <div class="ic-detail" id="ic-detail"></div>
+        <div class="ic-meta">
+            <div class="ic-badge"><div class="badge-v" id="m-dist">—</div><div class="badge-l">المسافة (م)</div></div>
+            <div class="ic-badge"><div class="badge-v" id="m-eta">—</div><div class="badge-l">وقت الوصول</div></div>
         </div>
-        <button id="goBtn" class="go-btn" onclick="startJourney()">انطلاق 🚀</button>
+        <button class="go-btn" onclick="startJourney()">انطلاق 🚀</button>
     </div>
 
     <!-- أزرار الجانب -->
-    <div class="side-controls">
-        <button class="btn-side" onclick="centerOnUser()" title="موقعي">🎯</button>
-        <button class="btn-side" onclick="map.zoomIn()">+</button>
-        <button class="btn-side" onclick="map.zoomOut()">−</button>
-        <button class="btn-side" onclick="location.reload()">🔄</button>
+    <div class="side-ctrl" style="z-index:2000">
+        <button class="btn-s" id="btn3d" onclick="toggle3D()" title="النموذج ثلاثي الأبعاد">🏛</button>
+        <button class="btn-s" id="btnGPS" onclick="centerOnUser()" title="موقعي">🎯</button>
+        <button class="btn-s" onclick="map&&map.zoomIn()">+</button>
+        <button class="btn-s" onclick="map&&map.zoomOut()">−</button>
+        <button class="btn-s" onclick="location.reload()">🔄</button>
     </div>
 
     <div class="app-sig">م/ عادل الشمري</div>
 </div>
 
-<!-- ===== إشعار الوصول ===== -->
-<div id="arrival-notif">
-    <span class="arrival-icon">🏁</span>
-    <div class="arrival-title">وصلت!</div>
-    <div class="arrival-sub" id="arrivalBldg"></div>
-    <button class="arrival-close" onclick="dismissArrival()">حسناً ✓</button>
+<!-- إشعار الوصول -->
+<div id="arrival">
+    <span class="ar-icon">🏁</span>
+    <div class="ar-title">وصلت!</div>
+    <div class="ar-sub" id="ar-sub"></div>
+    <button class="ar-close" onclick="dismissArrival()">حسناً ✓</button>
 </div>
 
-<!-- toast -->
 <div id="toast"></div>
 
+<!-- ══ مكتبات ══ -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
-/* ========================================================
-   البيانات
-======================================================== */
+/* ════════════════════════════════════════════════
+   البيانات المشتركة
+════════════════════════════════════════════════ */
 const collegeCenter = [31.3893496, 37.3102727];
-const WALK_SPEED    = 80; // متر / دقيقة
+const WALK_SPEED    = 80; // م/دقيقة
 
 const buildings = {
-    "1": { name: "مبنى 1 - الأنشطة والمسرح",        short: "الأنشطة والمسرح",     coords: [31.3885802, 37.3098097], color: "#e74c3c", icon: "🎭", cat: "نشاط"   },
-    "2": { name: "مبنى 2 - الدعم الفني والشبكات",   short: "الدعم الفني",          coords: [31.3884981, 37.3106472], color: "#3498db", icon: "💻", cat: "تقنية"  },
-    "3": { name: "مبنى 3 - الدراسات العامة والمحاسبة", short: "الدراسات العامة",   coords: [31.3888144, 37.3111052], color: "#9b59b6", icon: "📚", cat: "دراسة"  },
-    "4": { name: "مبنى 4 - الكافتيريا والبوفيه",    short: "الكافتيريا",           coords: [31.3892940, 37.3111964], color: "#f39c12", icon: "☕", cat: "طعام"   },
-    "5": { name: "مبنى 5 - المصلى والجامع",         short: "المصلى",               coords: [31.3896953, 37.3114700], color: "#1abc9c", icon: "🕌", cat: "ديني"   },
-    "6": { name: "مبنى 6 - ورش الميكانيكا",         short: "ورش الميكانيكا",       coords: [31.3903633, 37.3105369], color: "#e67e22", icon: "🔧", cat: "ورشة"   },
-    "7": { name: "مبنى 7 - قسم التقنية الميكانيكية", short: "التقنية الميكانيكية", coords: [31.3904349, 37.3098989], color: "#2ecc71", icon: "⚙️", cat: "تقنية"  },
-    "8": { name: "مبنى 8 - العمادة وشؤون المتدربين", short: "العمادة",             coords: [31.3898115, 37.3093759], color: "#d4af37", icon: "🏛️", cat: "إدارة"  }
+    "1":{ name:"مبنى 1 - الأنشطة والمسرح",      short:"الأنشطة والمسرح",      coords:[31.3885802,37.3098097], color:"#e74c3c", hex:0xe74c3c, icon:"🎭", cat:"نشاط",   floors:2, w:58, d:42 },
+    "2":{ name:"مبنى 2 - قسم الحاسب والشبكات",  short:"قسم الحاسب",           coords:[31.3884981,37.3106472], color:"#3498db", hex:0x3498db, icon:"💻", cat:"تقنية",  floors:3, w:55, d:40 },
+    "3":{ name:"مبنى 3 - الدراسات العامة",       short:"الدراسات العامة",      coords:[31.3888144,37.3111052], color:"#9b59b6", hex:0x9b59b6, icon:"📚", cat:"دراسة",  floors:3, w:55, d:45 },
+    "4":{ name:"مبنى 4 - الكافتيريا والبوفيه",  short:"الكافتيريا",           coords:[31.3892940,37.3111964], color:"#f39c12", hex:0xf39c12, icon:"☕", cat:"طعام",   floors:1, w:38, d:32 },
+    "5":{ name:"مبنى 5 - المصلى والجامع",        short:"المصلى",               coords:[31.3896953,37.3114700], color:"#1abc9c", hex:0x1abc9c, icon:"🕌", cat:"ديني",   floors:1, w:48, d:42 },
+    "6":{ name:"مبنى 6 - ورش الميكانيكا",        short:"ورش الميكانيكا",       coords:[31.3903633,37.3105369], color:"#e67e22", hex:0xe67e22, icon:"🔧", cat:"ورشة",   floors:1, w:72, d:52 },
+    "7":{ name:"مبنى 7 - التقنية الميكانيكية",   short:"التقنية الميكانيكية",  coords:[31.3904349,37.3098989], color:"#2ecc71", hex:0x2ecc71, icon:"⚙️", cat:"تقنية",  floors:3, w:62, d:45 },
+    "8":{ name:"مبنى 8 - العمادة وشؤون المتدربين",short:"العمادة",             coords:[31.3898115,37.3093759], color:"#d4af37", hex:0xd4af37, icon:"🏛️", cat:"إدارة",  floors:2, w:52, d:48 }
 };
 
 const keywordMap = {
     "بوفيه":"4","كافتيريا":"4","مصلى":"5","جامع":"5",
     "عمادة":"8","شؤون":"8","مسرح":"1","أنشطة":"1",
     "شبكات":"2","دعم":"2","محاسبة":"3","دراسات":"3",
-    "ميكانيكا":"6","ورش":"6","ورشة":"6","تقنية":"7"
+    "ميكانيكا":"6","ورش":"6","ورشة":"6","تقنية":"7","حاسب":"2"
 };
 
-/* ========================================================
-   الحالة
-======================================================== */
+/* حساب مركز الكلية (للتحويل إلى مترات) */
+const LAT_M  = 111000;
+const LNG_M  = 111000 * Math.cos(collegeCenter[0] * Math.PI/180);
+
+function latLngToXZ(coords){
+    return {
+        x: (coords[1] - collegeCenter[1]) * LNG_M,
+        z:-(coords[0] - collegeCenter[0]) * LAT_M
+    };
+}
+
+/* ════════════════════════════════════════════════
+   الحالة المشتركة
+════════════════════════════════════════════════ */
 let map, userMarker, destMarker, routeLine;
-let isNavigating       = false;
-let arrivedNotified    = false;
-let lastUserCoords     = null;
-let userHeading        = 0;
-let currentDest        = null;   // { bId, b }
+let isNavigating = false, arrivedNotified = false;
+let lastCoords = null, userHeading = 0;
+let currentDest = null;
+let is3D = false;
 
-/* ========================================================
-   تهيئة الخريطة
-======================================================== */
-function initMap() {
-    map = L.map('map', { zoomControl: false, maxZoom: 20 }).setView(collegeCenter, 18);
-    L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20 }).addTo(map);
-    addBuildingMarkers();
-}
-
-function addBuildingMarkers() {
-    // العلامات محذوفة - سيتم استبدالها بنماذج ثلاثية الأبعاد
-}
-
-/* ========================================================
+/* ════════════════════════════════════════════════
    الصلاحيات والبداية
-======================================================== */
-async function requestPermissions() {
-    if (typeof DeviceOrientationEvent !== 'undefined' &&
-        typeof DeviceOrientationEvent.requestPermission === 'function') {
-        try {
+════════════════════════════════════════════════ */
+async function requestPerms(){
+    if(typeof DeviceOrientationEvent!=='undefined' &&
+       typeof DeviceOrientationEvent.requestPermission==='function'){
+        try{
             const p = await DeviceOrientationEvent.requestPermission();
-            if (p === 'granted') window.addEventListener('deviceorientation', handleOrientation);
-        } catch(e) { /* تجاهل */ }
+            if(p==='granted') window.addEventListener('deviceorientation',handleOrientation);
+        }catch(e){}
     } else {
-        window.addEventListener('deviceorientation', handleOrientation);
+        window.addEventListener('deviceorientation',handleOrientation);
     }
-    startApp();
+    const ws = document.getElementById('welcome');
+    ws.style.opacity='0';
+    setTimeout(()=>{
+        ws.style.display='none';
+        document.getElementById('app').style.display='flex';
+        initLeaflet();
+        init3D();
+        if(navigator.geolocation)
+            navigator.geolocation.watchPosition(updatePos,null,
+                {enableHighAccuracy:true,timeout:10000,maximumAge:0});
+    },800);
 }
 
-function startApp() {
-    const ws = document.getElementById('welcome-screen');
-    ws.style.opacity = '0';
-    setTimeout(() => {
-        ws.style.display = 'none';
-        document.getElementById('main-app').style.display = 'flex';
-        initMap();
-        map.invalidateSize();
-        if (navigator.geolocation) {
-            navigator.geolocation.watchPosition(updatePos, null,
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
-        }
-    }, 800);
+function handleOrientation(e){
+    userHeading = e.webkitCompassHeading||(360-e.alpha);
+    const beam = document.querySelector('.user-beam');
+    if(beam) beam.style.transform=`rotate(${userHeading}deg)`;
 }
 
-/* ========================================================
-   البوصلة
-======================================================== */
-function handleOrientation(e) {
-    userHeading = e.webkitCompassHeading || (360 - e.alpha);
-    const beam = document.querySelector('.user-heading-beam');
-    if (beam) beam.style.transform = `rotate(${userHeading}deg)`;
+/* ════════════════════════════════════════════════
+   خريطة Leaflet الفضائية
+════════════════════════════════════════════════ */
+function initLeaflet(){
+    map = L.map('map',{zoomControl:false,maxZoom:20}).setView(collegeCenter,18);
+    L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{maxZoom:20}).addTo(map);
 }
 
-/* ========================================================
-   تحديث الموقع
-======================================================== */
-function updatePos(pos) {
-    lastUserCoords = [pos.coords.latitude, pos.coords.longitude];
-
+function updatePos(pos){
+    lastCoords = [pos.coords.latitude,pos.coords.longitude];
     const icon = L.divIcon({
-        className: 'custom-user-icon',
-        html: `<div style="position:relative">
-                 <div class="pulse-ring"></div>
-                 <div class="user-location-icon">
-                   <div class="user-heading-beam" style="transform:rotate(${userHeading}deg)"></div>
-                 </div>
-               </div>`,
-        iconSize: [20, 20], iconAnchor: [10, 10]
+        className:'',
+        html:`<div style="position:relative">
+                <div class="pulse-ring"></div>
+                <div class="user-dot">
+                    <div class="user-beam" style="transform:rotate(${userHeading}deg)"></div>
+                </div>
+              </div>`,
+        iconSize:[20,20],iconAnchor:[10,10]
+    });
+    if(!userMarker) userMarker=L.marker(lastCoords,{icon,zIndexOffset:1000}).addTo(map);
+    else{ userMarker.setLatLng(lastCoords); userMarker.setIcon(icon); }
+
+    if(destMarker && currentDest){
+        const dist = map.distance(lastCoords,destMarker.getLatLng());
+        drawRoute(lastCoords,destMarker.getLatLng(),dist);
+        if(isNavigating){
+            map.setView(lastCoords,map.getZoom());
+            if(dist<10&&!arrivedNotified){ arrivedNotified=true; showArrival(); }
+        }
+    }
+
+    update3DUserDot();
+}
+
+function drawRoute(start,end,dist){
+    if(routeLine) map.removeLayer(routeLine);
+    routeLine=L.polyline([start,end],{color:'#d4af37',weight:7,opacity:.85,dashArray:'1,15'}).addTo(map);
+    if(isNavigating&&dist!==undefined){
+        const arrived=dist<6;
+        document.getElementById('sDist').textContent=arrived?"وصلت! 🏁":`${Math.round(dist)} متر`;
+        document.getElementById('sEta').textContent=arrived?"":"⏱ الوقت المتوقع: ~"+Math.max(1,Math.round(dist/WALK_SPEED))+" دقيقة";
+    }
+}
+
+function centerOnUser(){
+    if(lastCoords&&map) map.setView(lastCoords,19);
+}
+
+/* ════════════════════════════════════════════════
+   النموذج ثلاثي الأبعاد (Three.js)
+════════════════════════════════════════════════ */
+let renderer3d, scene3d, camera3d, animId;
+let bldgMeshes = {};      // id -> mesh
+let selectedId  = null;
+let labelEls    = {};     // id -> div element
+
+/* متحكمات اللمس */
+let touch0={x:0,y:0}, touch1={x:0,y:0};
+let isDragging=false, isPinching=false;
+let lastDist=0;
+/* الكاميرا المدارية */
+let camTheta=0.4, camPhi=1.1, camR=320;
+const CAM_TARGET=new THREE.Vector3(0,0,0);
+
+function init3D(){
+    const canvas = document.getElementById('three-canvas');
+    renderer3d = new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+    renderer3d.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    renderer3d.shadowMap.enabled=true;
+    renderer3d.shadowMap.type=THREE.PCFSoftShadowMap;
+
+    scene3d = new THREE.Scene();
+    scene3d.background = new THREE.Color(0x87b8d4);
+    scene3d.fog = new THREE.Fog(0x87b8d4,400,900);
+
+    camera3d = new THREE.PerspectiveCamera(50,1,.1,2000);
+    updateCameraPos();
+
+    buildScene();
+    resize3D();
+    window.addEventListener('resize',resize3D);
+    bindTouchControls(canvas);
+}
+
+function resize3D(){
+    const c=document.getElementById('three-canvas');
+    const w=window.innerWidth, h=window.innerHeight;
+    renderer3d.setSize(w,h);
+    camera3d.aspect=w/h;
+    camera3d.updateProjectionMatrix();
+    updateLabels();
+}
+
+/* ── بناء المشهد ── */
+function buildScene(){
+
+    /* ── الإضاءة ── */
+    const ambient=new THREE.AmbientLight(0xffeedd,0.65);
+    scene3d.add(ambient);
+    const sun=new THREE.DirectionalLight(0xfff8e7,1.1);
+    sun.position.set(150,300,100);
+    sun.castShadow=true;
+    sun.shadow.mapSize.width=2048; sun.shadow.mapSize.height=2048;
+    sun.shadow.camera.near=1; sun.shadow.camera.far=800;
+    sun.shadow.camera.left=-300; sun.shadow.camera.right=300;
+    sun.shadow.camera.top=300; sun.shadow.camera.bottom=-300;
+    scene3d.add(sun);
+    const fill=new THREE.DirectionalLight(0xaaccff,0.3);
+    fill.position.set(-100,100,-100);
+    scene3d.add(fill);
+
+    /* ── الأرضية (رمل/بيئة) ── */
+    const ground=new THREE.Mesh(
+        new THREE.PlaneGeometry(700,700),
+        new THREE.MeshLambertMaterial({color:0xc9a96e})
+    );
+    ground.rotation.x=-Math.PI/2;
+    ground.receiveShadow=true;
+    scene3d.add(ground);
+
+    /* ── ممرات وطرق ── */
+    addRoad(0,0,180,180,0x8b7355,1);         // طريق شمال-جنوب
+    addRoad(0,0,180,0,0x8b7355,1,-Math.PI/2); // طريق شرق-غرب
+    /* حلقات الفناء الدائري */
+    addRing(0,65,4,0x9e8b6e);
+    addRing(0,100,4,0x9e8b6e);
+    addRing(0,135,3,0xaa9475);
+    /* الفناء الداخلي (أرضية الحلقة الداخلية) */
+    const courtMat=new THREE.MeshLambertMaterial({color:0xd4c4a0});
+    const court=new THREE.Mesh(new THREE.CircleGeometry(65,48),courtMat);
+    court.rotation.x=-Math.PI/2; court.position.y=0.05;
+    scene3d.add(court);
+    /* المبنى الدائري المركزي */
+    addCentralBuilding();
+
+    /* ── طرق شعاعية بين المباني والمركز ── */
+    const radials=[
+        {angle:Math.PI*0.8,  len:80},
+        {angle:Math.PI*1.1,  len:90},
+        {angle:Math.PI*1.4,  len:85},
+        {angle:Math.PI*1.7,  len:95},
+        {angle:Math.PI*2.0,  len:110},
+        {angle:Math.PI*0.3,  len:110},
+        {angle:Math.PI*-0.1, len:115},
+        {angle:Math.PI*-0.4, len:100},
+    ];
+    radials.forEach(r=>{
+        const roadG=new THREE.PlaneGeometry(8,r.len);
+        const roadM=new THREE.MeshLambertMaterial({color:0x8b7355});
+        const road=new THREE.Mesh(roadG,roadM);
+        road.rotation.x=-Math.PI/2;
+        road.rotation.z=r.angle;
+        road.position.set(
+            Math.sin(r.angle)*(r.len/2),0.08,
+            Math.cos(r.angle)*(r.len/2)
+        );
+        scene3d.add(road);
     });
 
-    if (!userMarker) {
-        userMarker = L.marker(lastUserCoords, { icon, zIndexOffset: 1000 }).addTo(map);
-    } else {
-        userMarker.setLatLng(lastUserCoords);
-        userMarker.setIcon(icon);
+    /* ── المباني ── */
+    Object.entries(buildings).forEach(([id,b])=>{
+        const pos=latLngToXZ(b.coords);
+        const h=b.floors*4 + (id==='5'?2:0) + (id==='6'?2:0); // تعديل الارتفاع
+        addBuilding(id,b,pos.x,pos.z,h);
+    });
+
+    /* بدء حلقة الرسم */
+    render3DLoop();
+}
+
+function addRoad(cx,cz,len,w,color,yOff,rot=0){
+    const g=new THREE.PlaneGeometry(w,len);
+    const m=new THREE.MeshLambertMaterial({color});
+    const mesh=new THREE.Mesh(g,m);
+    mesh.rotation.x=-Math.PI/2;
+    mesh.rotation.z=rot;
+    mesh.position.set(cx,0.06+yOff,cz);
+    scene3d.add(mesh);
+}
+
+function addRing(y,r,w,color){
+    const g=new THREE.RingGeometry(r-w/2,r+w/2,64);
+    const m=new THREE.MeshLambertMaterial({color,side:THREE.DoubleSide});
+    const mesh=new THREE.Mesh(g,m);
+    mesh.rotation.x=-Math.PI/2;
+    mesh.position.y=0.07+y;
+    scene3d.add(mesh);
+}
+
+function addCentralBuilding(){
+    /* قاعدة دائرية */
+    const base=new THREE.Mesh(
+        new THREE.CylinderGeometry(22,24,6,32),
+        new THREE.MeshLambertMaterial({color:0xddd0b0})
+    );
+    base.position.set(0,3,0);
+    base.castShadow=true; base.receiveShadow=true;
+    scene3d.add(base);
+    /* طابق علوي */
+    const top=new THREE.Mesh(
+        new THREE.CylinderGeometry(14,18,5,32),
+        new THREE.MeshLambertMaterial({color:0xcfc2a0})
+    );
+    top.position.set(0,9.5,0);
+    top.castShadow=true;
+    scene3d.add(top);
+    /* سقف مخروطي */
+    const roof=new THREE.Mesh(
+        new THREE.ConeGeometry(16,5,32),
+        new THREE.MeshLambertMaterial({color:0x8b7a5e})
+    );
+    roof.position.set(0,14.5,0);
+    scene3d.add(roof);
+}
+
+function addBuilding(id, b, x, z, h){
+    const group=new THREE.Group();
+    group.position.set(x,0,z);
+
+    const floorH = h/b.floors;
+
+    /* ── الجسم الرئيسي (طوابق) ── */
+    for(let f=0;f<b.floors;f++){
+        const body=new THREE.Mesh(
+            new THREE.BoxGeometry(b.w,floorH-0.3,b.d),
+            new THREE.MeshLambertMaterial({color:b.hex})
+        );
+        body.position.y = f*floorH + floorH/2;
+        body.castShadow=true; body.receiveShadow=true;
+        group.add(body);
+
+        /* خط الطابق (أبيض شفاف) */
+        if(f>0){
+            const lineG=new THREE.BoxGeometry(b.w+0.2,0.3,b.d+0.2);
+            const lineM=new THREE.MeshLambertMaterial({color:0xffffff,transparent:true,opacity:.25});
+            const line=new THREE.Mesh(lineG,lineM);
+            line.position.y=f*floorH;
+            group.add(line);
+        }
     }
 
-    if (destMarker && currentDest) {
-        const dist = map.distance(lastUserCoords, destMarker.getLatLng());
-        drawRoute(lastUserCoords, destMarker.getLatLng(), dist);
+    /* ── السقف ── */
+    const roof=new THREE.Mesh(
+        new THREE.BoxGeometry(b.w+0.4,0.8,b.d+0.4),
+        new THREE.MeshLambertMaterial({color:darken(b.hex,0.3)})
+    );
+    roof.position.y=h+0.4;
+    roof.castShadow=true;
+    group.add(roof);
 
-        if (isNavigating) {
-            map.setView(lastUserCoords, map.getZoom());
-            if (dist < 10 && !arrivedNotified) {
-                arrivedNotified = true;
-                showArrival();
-            }
+    /* ── تفاصيل السطح (مكيفات/خزانات) ── */
+    if(b.floors>1){
+        for(let i=0;i<3;i++){
+            const ac=new THREE.Mesh(
+                new THREE.BoxGeometry(4,1.5,3),
+                new THREE.MeshLambertMaterial({color:0xdddddd})
+            );
+            ac.position.set(-b.w/2+6+i*7,h+1.2,b.d/2-4);
+            group.add(ac);
         }
+    }
+
+    /* ── إطار مضيء عند التحديد ── */
+    const edges=new THREE.Mesh(
+        new THREE.BoxGeometry(b.w+1.5,h+1,b.d+1.5),
+        new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,wireframe:false,side:THREE.BackSide})
+    );
+    edges.position.y=h/2;
+    edges.userData.isGlow=true;
+    group.add(edges);
+
+    group.userData={id,h};
+    scene3d.add(group);
+    bldgMeshes[id]=group;
+
+    /* تسمية المبنى */
+    createLabel(id,b,x,h,z);
+}
+
+function darken(hex,amt){
+    const r=((hex>>16)&0xff)*amt;
+    const g=((hex>>8)&0xff)*amt;
+    const b=(hex&0xff)*amt;
+    return (r<<16)|(g<<8)|b;
+}
+
+function createLabel(id,b,x,h,z){
+    const el=document.createElement('div');
+    el.style.cssText=`
+        position:absolute;pointer-events:none;
+        background:rgba(0,0,0,.75);
+        color:#fff;font-family:'Tajawal',sans-serif;
+        font-size:.7rem;font-weight:700;
+        padding:4px 8px;border-radius:8px;
+        border:1px solid ${b.color}88;
+        white-space:nowrap;text-align:center;
+        transform:translateX(-50%) translateY(-100%);
+        transition:opacity .3s;
+    `;
+    el.innerHTML=`<span style="color:${b.color}">${b.icon}</span> ${b.short}`;
+    el.dataset.id=id;
+    document.getElementById('labels3d').appendChild(el);
+    labelEls[id]=el;
+}
+
+/* ── موقع المستخدم في ثلاثي الأبعاد ── */
+let userDot3d=null;
+function update3DUserDot(){
+    if(!lastCoords||!scene3d) return;
+    const pos=latLngToXZ(lastCoords);
+    if(!userDot3d){
+        const g=new THREE.SphereGeometry(3,16,8);
+        const m=new THREE.MeshLambertMaterial({color:0x2196F3,emissive:0x1565C0,emissiveIntensity:.4});
+        userDot3d=new THREE.Mesh(g,m);
+        scene3d.add(userDot3d);
+    }
+    userDot3d.position.set(pos.x,3.5,pos.z);
+}
+
+/* ── حلقة الرسم ── */
+let glow3dT=0;
+function render3DLoop(){
+    animId=requestAnimationFrame(render3DLoop);
+    glow3dT+=0.04;
+    /* تأثير النبض للمبنى المحدد */
+    if(selectedId&&bldgMeshes[selectedId]){
+        const glow=bldgMeshes[selectedId].children.find(c=>c.userData.isGlow);
+        if(glow){
+            const pulse=(.5+.5*Math.sin(glow3dT))*0.45;
+            glow.material.opacity=pulse;
+        }
+    }
+    updateLabels();
+    renderer3d.render(scene3d,camera3d);
+}
+
+/* ── تحديث مواضع التسميات ── */
+function updateLabels(){
+    if(!camera3d) return;
+    const w=window.innerWidth, h=window.innerHeight;
+    const proj=new THREE.Vector3();
+    Object.entries(bldgMeshes).forEach(([id,grp])=>{
+        const el=labelEls[id];
+        if(!el) return;
+        const bldgH=grp.userData.h||10;
+        const worldPos=new THREE.Vector3(grp.position.x,bldgH+6,grp.position.z);
+        proj.copy(worldPos).project(camera3d);
+        const sx=(proj.x+1)/2*w;
+        const sy=(-proj.y+1)/2*h;
+        if(proj.z>1||sx<-50||sx>w+50||sy<-50||sy>h+50){
+            el.style.opacity='0'; return;
+        }
+        el.style.opacity='1';
+        el.style.left=sx+'px';
+        el.style.top=sy+'px';
+    });
+}
+
+/* ── موضع الكاميرا المدارية ── */
+function updateCameraPos(){
+    const x=camR*Math.sin(camPhi)*Math.sin(camTheta);
+    const y=camR*Math.cos(camPhi);
+    const z=camR*Math.sin(camPhi)*Math.cos(camTheta);
+    camera3d.position.set(
+        CAM_TARGET.x+x,
+        CAM_TARGET.y+y,
+        CAM_TARGET.z+z
+    );
+    camera3d.lookAt(CAM_TARGET);
+}
+
+/* ── متحكمات اللمس ── */
+function bindTouchControls(canvas){
+    canvas.addEventListener('touchstart',onTStart,{passive:false});
+    canvas.addEventListener('touchmove', onTMove, {passive:false});
+    canvas.addEventListener('touchend',  onTEnd);
+    canvas.addEventListener('click',     on3DClick);
+}
+
+function onTStart(e){
+    e.preventDefault();
+    if(e.touches.length===1){
+        isDragging=true; isPinching=false;
+        touch0={x:e.touches[0].clientX,y:e.touches[0].clientY};
+    } else if(e.touches.length===2){
+        isPinching=true; isDragging=false;
+        lastDist=Math.hypot(
+            e.touches[1].clientX-e.touches[0].clientX,
+            e.touches[1].clientY-e.touches[0].clientY
+        );
     }
 }
 
-/* ========================================================
-   رسم المسار + المسافة + ETA
-======================================================== */
-function drawRoute(start, end, dist) {
-    if (routeLine) map.removeLayer(routeLine);
-    routeLine = L.polyline([start, end], {
-        color: '#d4af37', weight: 7, opacity: .85, dashArray: '1, 15'
-    }).addTo(map);
+function onTMove(e){
+    e.preventDefault();
+    if(isDragging&&e.touches.length===1){
+        const dx=e.touches[0].clientX-touch0.x;
+        const dy=e.touches[0].clientY-touch0.y;
+        camTheta-=dx*0.008;
+        camPhi=Math.max(.2,Math.min(1.4,camPhi+dy*0.006));
+        touch0={x:e.touches[0].clientX,y:e.touches[0].clientY};
+        updateCameraPos();
+    } else if(isPinching&&e.touches.length===2){
+        const d=Math.hypot(
+            e.touches[1].clientX-e.touches[0].clientX,
+            e.touches[1].clientY-e.touches[0].clientY
+        );
+        camR=Math.max(80,Math.min(600,camR-(d-lastDist)*1.5));
+        lastDist=d;
+        updateCameraPos();
+    }
+}
+function onTEnd(){ isDragging=false; isPinching=false; }
 
-    if (isNavigating && dist !== undefined) {
-        const arrived = dist < 6;
-        const distTxt = arrived ? "وصلت! 🏁" : `${Math.round(dist)} متر`;
-        const eta     = arrived ? "أنت هنا" : `~${Math.max(1, Math.round(dist / WALK_SPEED))} دقيقة`;
-        document.getElementById('statusDist').textContent = distTxt;
-        document.getElementById('statusEta').textContent  = `⏱ الوقت المتوقع: ${eta}`;
+/* ── النقر على المبنى في ثلاثي الأبعاد ── */
+const raycaster=new THREE.Raycaster();
+const pointer=new THREE.Vector2();
+function on3DClick(e){
+    const rect=e.target.getBoundingClientRect();
+    pointer.x= ((e.clientX-rect.left)/rect.width )*2-1;
+    pointer.y=-((e.clientY-rect.top )/rect.height)*2+1;
+    raycaster.setFromCamera(pointer,camera3d);
+    const meshes=[];
+    Object.values(bldgMeshes).forEach(g=>g.children.forEach(c=>{ if(!c.userData.isGlow) meshes.push(c); }));
+    const hits=raycaster.intersectObjects(meshes);
+    if(hits.length){
+        const grp=hits[0].object.parent;
+        if(grp&&grp.userData.id) select3DBuilding(grp.userData.id);
     }
 }
 
-/* ========================================================
-   البحث
-======================================================== */
-document.getElementById('roomInput').addEventListener('input', function(e) {
-    const val   = e.target.value.trim();
-    const valUp = val.toUpperCase();
-
-    // بحث بالكلمة المفتاحية
-    for (const k in keywordMap) {
-        if (val.includes(k)) {
-            executeSearch(keywordMap[k], "key", k);
-            return;
-        }
+function select3DBuilding(id){
+    /* إزالة التحديد السابق */
+    if(selectedId&&bldgMeshes[selectedId]){
+        const prev=bldgMeshes[selectedId].children.find(c=>c.userData.isGlow);
+        if(prev) prev.material.opacity=0;
     }
+    selectedId=id;
+    glow3dT=0;
+    /* تحريك الكاميرا نحو المبنى */
+    const grp=bldgMeshes[id];
+    CAM_TARGET.set(grp.position.x*0.3,0,grp.position.z*0.3);
+    camR=Math.max(150,camR);
+    updateCameraPos();
+    /* إظهار بطاقة المعلومات */
+    executeSearch(id,"key",buildings[id].short);
+}
 
-    // رمز القاعة (10 أحرف)
-    if (valUp.length === 10) {
-        const bId      = valUp[4];
-        const floor    = valUp[5];
-        const char7    = valUp[6];
-        const char8    = valUp[7];
-        const isWS     = isNaN(valUp.charAt(9));
+/* ════════════════════════════════════════════════
+   التبديل بين الوضعين
+════════════════════════════════════════════════ */
+function toggle3D(){
+    is3D=!is3D;
+    document.getElementById('sat-view').style.display = is3D?'none':'block';
+    document.getElementById('view3d').style.display   = is3D?'flex':'none';
+    document.getElementById('btn3d').classList.toggle('active',is3D);
+    document.getElementById('btnGPS').style.display   = is3D?'none':'flex';
+    if(is3D){
+        resize3D();
+        showToast("اضغط على أي مبنى لعرض التفاصيل");
+    }
+}
 
-        if (isWS) {
-            if (floor !== char7) { showToast("تنبيه: رقم الدور غير متطابق"); return; }
-        } else {
-            if (floor !== char8) { showToast("تنبيه: رقم الدور غير متطابق"); return; }
-        }
-        executeSearch(bId, isWS ? "workshop" : "code",
-            { f: floor, r: valUp.substring(isWS ? 6 : 7) });
+/* ════════════════════════════════════════════════
+   البحث والتنقل
+════════════════════════════════════════════════ */
+document.getElementById('roomInput').addEventListener('input',function(e){
+    const val=e.target.value.trim(), valU=val.toUpperCase();
+    for(const k in keywordMap){
+        if(val.includes(k)){ executeSearch(keywordMap[k],"key",k); return; }
+    }
+    if(valU.length===10){
+        const bId=valU[4],floor=valU[5],c7=valU[6],c8=valU[7],isWS=isNaN(valU[9]);
+        if(isWS){ if(floor!==c7){showToast("تنبيه: رقم الدور غير متطابق");return;} }
+        else     { if(floor!==c8){showToast("تنبيه: رقم الدور غير متطابق");return;} }
+        executeSearch(bId,isWS?"workshop":"code",{f:floor,r:valU.substring(isWS?6:7)});
     }
 });
 
-/* ========================================================
-   تنفيذ البحث وعرض البطاقة
-======================================================== */
-function executeSearch(bId, type, data) {
-    const b = buildings[bId];
-    if (!b) return;
+function executeSearch(bId,type,data){
+    const b=buildings[bId]; if(!b) return;
+    isNavigating=false; arrivedNotified=false; currentDest={bId,b};
+    document.getElementById('status-bar').style.display='none';
 
-    isNavigating    = false;
-    arrivedNotified = false;
-    currentDest     = { bId, b };
+    /* أيقونة المبنى */
+    const icon=document.getElementById('ic-icon');
+    icon.textContent=b.icon;
+    icon.style.background=b.color+'28';
+    icon.style.border=`1px solid ${b.color}55`;
+    document.getElementById('ic-name').textContent=b.name;
+    document.getElementById('ic-cat').textContent=`${b.cat} • مبنى ${bId}`;
 
-    document.getElementById('status-bar').style.display = 'none';
-
-    // أيقونة + اسم المبنى
-    const iconEl = document.getElementById('infoBldgIcon');
-    iconEl.textContent  = b.icon;
-    iconEl.style.background = b.color + '28';
-    iconEl.style.border     = `1px solid ${b.color}55`;
-
-    document.getElementById('bldgName').textContent = b.name;
-    document.getElementById('bldgCat').textContent  = `${b.cat} • مبنى ${bId}`;
-
-    // علامة الوجهة على الخريطة
-    if (destMarker) map.removeLayer(destMarker);
-    destMarker = L.marker(b.coords, {
-        icon: L.divIcon({
-            className: '',
-            html: `<div style="
-                     width:18px;height:18px;border-radius:50%;background:#fff;
-                     border:3px solid ${b.color};
-                     box-shadow:0 0 16px ${b.color}cc"></div>`,
-            iconSize: [18,18], iconAnchor: [9,9]
-        })
-    }).addTo(map).bindPopup(b.name).openPopup();
-
-    map.flyTo(b.coords, 19);
-
-    // تفاصيل الوجهة
-    const fNames = { "0":"الأرضي","1":"الأول","2":"الثاني","3":"الثالث" };
-    let detail = "";
-    if (type === "key") {
-        detail = `🏢 وجهتك: <b>${b.name}</b>`;
+    /* تفاصيل القاعة */
+    const fN={"0":"الأرضي","1":"الأول","2":"الثاني","3":"الثالث"};
+    let detail="";
+    if(type==="key"){
+        detail=`🏢 وجهتك: <b>${b.name}</b>`;
     } else {
-        let desc = (bId === "7" && data.f === "3") ? "مكاتب إدارية" : "قاعات / معامل";
-        if (bId === "6" || type === "workshop") desc = "ورش الميكانيكا";
-        detail = `الدور <b>${fNames[data.f] || data.f}</b> — ${desc}<br>📌 رقم: <b>${data.r}</b>`;
+        let desc=(bId==="7"&&data.f==="3")?"مكاتب إدارية":"قاعات / معامل";
+        if(bId==="6"||type==="workshop") desc="ورش الميكانيكا";
+        detail=`الدور <b>${fN[data.f]||data.f}</b> — ${desc}<br>📌 رقم: <b>${data.r}</b>`;
     }
-    document.getElementById('targetDetail').innerHTML = detail;
+    document.getElementById('ic-detail').innerHTML=detail;
 
-    // مسافة + ETA
-    if (lastUserCoords) {
-        const dist = map.distance(lastUserCoords, b.coords);
-        const eta  = Math.max(1, Math.round(dist / WALK_SPEED));
-        document.getElementById('metaDist').textContent = Math.round(dist);
-        document.getElementById('metaEta').textContent  = `${eta} د`;
-        drawRoute(lastUserCoords, b.coords, dist);
+    /* المسافة وETA */
+    if(lastCoords&&map){
+        const dist=map.distance(lastCoords,b.coords);
+        const eta=Math.max(1,Math.round(dist/WALK_SPEED));
+        document.getElementById('m-dist').textContent=Math.round(dist);
+        document.getElementById('m-eta').textContent=eta+" د";
+        /* علامة الوجهة على الخريطة */
+        if(!is3D){
+            if(destMarker) map.removeLayer(destMarker);
+            destMarker=L.marker(b.coords,{icon:L.divIcon({
+                className:'',
+                html:`<div style="width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid ${b.color};box-shadow:0 0 16px ${b.color}cc"></div>`,
+                iconSize:[18,18],iconAnchor:[9,9]
+            })}).addTo(map).bindPopup(b.name).openPopup();
+            map.flyTo(b.coords,19);
+            drawRoute(lastCoords,b.coords,dist);
+        }
     } else {
-        document.getElementById('metaDist').textContent = '—';
-        document.getElementById('metaEta').textContent  = '—';
+        document.getElementById('m-dist').textContent='—';
+        document.getElementById('m-eta').textContent='—';
     }
-
-    document.getElementById('infoCard').style.display = 'block';
+    document.getElementById('infoCard').style.display='block';
 }
 
-/* ========================================================
-   بدء الرحلة / إلغاؤها
-======================================================== */
-function startJourney() {
-    if (!currentDest) return;
-    isNavigating    = true;
-    arrivedNotified = false;
-    document.getElementById('infoCard').style.display  = 'none';
-    document.getElementById('status-bar').style.display = 'block';
-    document.getElementById('statusBldg').textContent   = currentDest.b.name;
+function startJourney(){
+    if(!currentDest) return;
+    /* التبديل إلى الخريطة الفضائية */
+    if(is3D){ is3D=false; toggle3D(); }
+    isNavigating=true; arrivedNotified=false;
+    document.getElementById('infoCard').style.display='none';
+    document.getElementById('status-bar').style.display='block';
+    document.getElementById('sBldg').textContent=currentDest.b.name;
+    /* رسم المسار */
+    if(lastCoords&&map){
+        if(destMarker) map.removeLayer(destMarker);
+        const b=currentDest.b;
+        destMarker=L.marker(b.coords,{icon:L.divIcon({
+            className:'',
+            html:`<div style="width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid ${b.color};box-shadow:0 0 16px ${b.color}cc"></div>`,
+            iconSize:[18,18],iconAnchor:[9,9]
+        })}).addTo(map).bindPopup(b.name).openPopup();
+        drawRoute(lastCoords,b.coords,map.distance(lastCoords,b.coords));
+    }
     centerOnUser();
 }
 
-function cancelJourney() {
-    isNavigating = false;
-    document.getElementById('status-bar').style.display = 'none';
-    if (routeLine)  { map.removeLayer(routeLine);  routeLine  = null; }
-    if (destMarker) { map.removeLayer(destMarker); destMarker = null; }
-    currentDest     = null;
-    arrivedNotified = false;
-    document.getElementById('roomInput').value = '';
+function cancelJourney(){
+    isNavigating=false;
+    document.getElementById('status-bar').style.display='none';
+    if(routeLine){map.removeLayer(routeLine);routeLine=null;}
+    if(destMarker){map.removeLayer(destMarker);destMarker=null;}
+    currentDest=null; arrivedNotified=false;
+    document.getElementById('roomInput').value='';
     showToast("تم إلغاء الرحلة");
 }
 
-function centerOnUser() {
-    if (lastUserCoords) map.setView(lastUserCoords, 19);
-}
-
-/* ========================================================
+/* ════════════════════════════════════════════════
    إشعار الوصول
-======================================================== */
-function showArrival() {
-    if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]);
-    document.getElementById('arrivalBldg').textContent = currentDest?.b.short || '';
-    document.getElementById('arrival-notif').classList.add('show');
-    document.getElementById('statusDist').textContent = "وصلت! 🏁";
-    document.getElementById('statusEta').textContent  = "";
+════════════════════════════════════════════════ */
+function showArrival(){
+    if(navigator.vibrate) navigator.vibrate([200,100,200,100,500]);
+    document.getElementById('ar-sub').textContent=currentDest?.b.short||'';
+    document.getElementById('arrival').classList.add('show');
+    document.getElementById('sDist').textContent="وصلت! 🏁";
+    document.getElementById('sEta').textContent="";
 }
+function dismissArrival(){ document.getElementById('arrival').classList.remove('show'); }
 
-function dismissArrival() {
-    document.getElementById('arrival-notif').classList.remove('show');
-}
-
-/* ========================================================
+/* ════════════════════════════════════════════════
    Toast
-======================================================== */
-let _toastTimer;
-function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    clearTimeout(_toastTimer);
-    _toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+════════════════════════════════════════════════ */
+let _tt;
+function showToast(msg){
+    const t=document.getElementById('toast');
+    t.textContent=msg; t.classList.add('show');
+    clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove('show'),2600);
 }
 </script>
 </body>
