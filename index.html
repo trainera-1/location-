@@ -116,10 +116,10 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);ov
     <button class="gobtn" onclick="startJourney()">انطلاق للوجهة &#x27A4;</button>
   </div>
   <div class="sctrl">
-    <button class="bs" id="btn3d" onclick="toggle3D()">3D</button>
+    <button class="bs" id="btn3d" style="opacity:.45;cursor:not-allowed" title="قريباً">3D</button>
     <button class="bs" id="btnGPS" onclick="centerOnUser()">&#x1F3AF;</button>
-    <button class="bs" onclick="map&&map.zoomIn()">+</button>
-    <button class="bs" onclick="map&&map.zoomOut()">&minus;</button>
+    <button class="bs" onclick="doZoom(1)">+</button>
+    <button class="bs" onclick="doZoom(-1)">&minus;</button>
     <button class="bs" onclick="location.reload()">&#x21BA;</button>
   </div>
   <div class="appsig">م/ عادل الشمري</div>
@@ -138,6 +138,7 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);ov
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {DRACOLoader} from 'three/addons/loaders/DRACOLoader.js';
 
 const CC=[31.3893496,37.3102727],WS=80;
 const BLDGS={
@@ -181,7 +182,7 @@ function drawRoute(a,b,d){
 
 /* ═══ Three.js ═══ */
 let R3,S3,C3;
-let cTh=0.45,cPh=1.04,cR=360,cTgt=new THREE.Vector3();
+let cTh=0.55,cPh=0.85,cR=420,cTgt=new THREE.Vector3();
 let tdrag=false,tpinch=false,td0={x:0,y:0},tdist=0;
 let camAnim=null,selId=null,prevT=0;
 const bMeshes={};
@@ -197,15 +198,16 @@ function init3D(){
   R3.setPixelRatio(Math.min(devicePixelRatio,2));
   R3.shadowMap.enabled=true;R3.shadowMap.type=THREE.PCFSoftShadowMap;
   R3.toneMapping=THREE.ACESFilmicToneMapping;R3.toneMappingExposure=1.1;
-  S3=new THREE.Scene();S3.background=new THREE.Color(0x87ceeb);S3.fog=new THREE.FogExp2(0x9ec8da,0.0012);
+  S3=new THREE.Scene();S3.background=new THREE.Color(0x9fd4e8);S3.fog=new THREE.FogExp2(0xb8d8e8,0.0010);
   C3=new THREE.PerspectiveCamera(50,1,0.5,1500);setCam();
-  S3.add(new THREE.AmbientLight(0xfff4d0,0.65));
-  const sun=new THREE.DirectionalLight(0xfffae0,1.4);
-  sun.position.set(180,400,120);sun.castShadow=true;
-  sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.near=1;sun.shadow.camera.far=900;
-  sun.shadow.camera.left=-280;sun.shadow.camera.right=280;sun.shadow.camera.top=280;sun.shadow.camera.bottom=-280;
+  S3.add(new THREE.AmbientLight(0xfff5e0,0.72));
+  const sun=new THREE.DirectionalLight(0xfff0cc,1.55);
+  sun.position.set(220,500,180);sun.castShadow=true;
+  sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.near=1;sun.shadow.camera.far=1100;
+  sun.shadow.camera.left=-320;sun.shadow.camera.right=320;sun.shadow.camera.top=320;sun.shadow.camera.bottom=-320;
   S3.add(sun);
-  const fill=new THREE.DirectionalLight(0xb0d0ff,0.3);fill.position.set(-150,100,-100);S3.add(fill);
+  const fill=new THREE.DirectionalLight(0xb8d8ff,0.28);fill.position.set(-200,120,-150);S3.add(fill);
+  const bounce=new THREE.DirectionalLight(0xffe8b8,0.18);bounce.position.set(0,-1,0);S3.add(bounce);
   resize3D();window.addEventListener('resize',resize3D);bindTouch(cv);renderLoop();
 }
 
@@ -243,7 +245,10 @@ function loadGLB(cb){
   if(glbLoading)return;
   glbLoading=true;
   document.getElementById('loading3d').style.display='block';
+  const draco=new DRACOLoader();
+  draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/');
   const loader=new GLTFLoader();
+  loader.setDRACOLoader(draco);
   loader.load('./campus.glb',gltf=>{
     S3.add(gltf.scene);
     gltf.scene.traverse(obj=>{
@@ -379,9 +384,8 @@ function executeSearch(bId,type,data){
   const fN={"0":"الأرضي","1":"الأول","2":"الثاني","3":"الثالث"};
   let det='';
   if(type==='key'||!data)det=`<b>القسم:</b> ${b.dept}<br><b>عدد الأدوار:</b> ${b.fl} ${b.fl===1?'دور':'أدوار'}`;
-  else{let desc=(bId==='7'&&data.f==='3')?'مكاتب إدارية':'قاعات دراسية / معامل';
-    if(bId==='6'||type==='workshop')desc='ورش الميكانيكا';
-    det=`<b>الدور:</b> ${fN[data.f]||data.f}<br><b>النوع:</b> ${desc}<br><b>رقم القاعة:</b> ${data.r}`;}
+  else{const roomNum=data.r.replace(/[A-Za-z]+$/,'');
+    det=`<b>الدور:</b> ${fN[data.f]||data.f}<br><b>رقم القاعة:</b> ${roomNum}`;}
   document.getElementById('icdet').innerHTML=det;
   if(lastGPS&&map&&!is3D){
     const d=map.distance(lastGPS,b.gps),eta=Math.max(1,Math.round(d/WS));
@@ -431,6 +435,7 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 
 window.startApp=startApp;window.toggle3D=toggle3D;window.startJourney=startJourney;
 window.cancelJourney=cancelJourney;window.centerOnUser=centerOnUser;window.dismissArrival=dismissArrival;
+window.doZoom=function(dir){if(map){if(dir>0)map.zoomIn();else map.zoomOut();}};
 </script>
 </body>
 </html>
