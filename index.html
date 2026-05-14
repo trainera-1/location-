@@ -408,8 +408,6 @@ function startJourney(){
   document.getElementById('icard').style.display='none';
   document.getElementById('statusBar').style.display='block';
   document.getElementById('sBldg').textContent=dest.b.name;
-  if(!is3D)toggle3D();
-  loadGLB(()=>{draw3DNavPath();flyToBuilding(dest.bId);});
   if(lastGPS&&map){const b=dest.b;
     if(dMark)map.removeLayer(dMark);
     dMark=L.marker(b.gps,{icon:L.divIcon({className:'',
