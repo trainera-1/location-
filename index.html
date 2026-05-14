@@ -142,7 +142,7 @@ import {DRACOLoader} from 'three/addons/loaders/DRACOLoader.js';
 
 const CC=[31.3893496,37.3102727],WS=80;
 const BLDGS={
-  "1":{name:"مبنى 1 - الأنشطة والمسرح",dept:"قسم الأنشطة",gps:[31.3885802,37.3098097],clr:"#7f8c8d",fl:2},
+  "1":{name:"مبنى 1 - الأنشطة والمسرح",dept:"قسم الأنشطة",gps:[31.3885802,37.3098097],clr:"#7f8c8d",fl:1},
   "2":{name:"مبنى 2 - قسم الحاسب والشبكات",dept:"قسم الحاسب والشبكات",gps:[31.3884981,37.3106472],clr:"#5d6d7e",fl:3},
   "3":{name:"مبنى 3 - الدراسات العامة",dept:"قسم الدراسات العامة",gps:[31.3888144,37.3111052],clr:"#6e6e6e",fl:3},
   "4":{name:"مبنى 4 - الكافتيريا",dept:"الكافتيريا والبوفيه",gps:[31.3892940,37.3111964],clr:"#8c7853",fl:1},
@@ -151,7 +151,8 @@ const BLDGS={
   "7":{name:"مبنى 7 - التقنية الميكانيكية",dept:"قسم التقنية الميكانيكية",gps:[31.3904349,37.3098989],clr:"#4a7a6a",fl:3},
   "8":{name:"مبنى 8 - العمادة",dept:"عمادة الكلية",gps:[31.3898115,37.3093759],clr:"#8a7a4a",fl:2}
 };
-const KW={"بوفيه":"4","كافتيريا":"4","مصلى":"5","جامع":"5","عمادة":"8","شؤون":"8","مسرح":"1","أنشطة":"1","شبكات":"2","دعم":"2","محاسبة":"3","دراسات":"3","ميكانيكا":"6","ورش":"6","ورشة":"6","تقنية":"7","حاسب":"2"};
+const KW={"بوفيه":"4","كافتيريا":"4","مصلى":"5","جامع":"5","عمادة":"8","مسرح":"1","أنشطة":"1","شبكات":"2","دعم":"2","محاسبة":"3","دراسات":"3","ميكانيكا":"6","ورش":"6","ورشة":"6","تقنية":"7","حاسب":"2"};
+const KWF={"شؤون المتدربين":{b:"8",f:"1"},"شؤون طلاب":{b:"8",f:"1"},"شؤون":{b:"8",f:"1"},"متدربين":{b:"8",f:"1"}};
 const LM=111000,LG=111000*Math.cos(CC[0]*Math.PI/180);
 function toXZ(g){return{x:(g[1]-CC[1])*LG,z:-(g[0]-CC[0])*LM};}
 
@@ -366,6 +367,7 @@ async function startApp(){
 
 document.getElementById('roomInput').addEventListener('input',function(e){
   const v=e.target.value.trim(),u=v.toUpperCase();
+  for(const k in KWF){if(v.includes(k)){const d=KWF[k];executeSearch(d.b,'floor',{f:d.f});return;}}
   for(const k in KW){if(v.includes(k)){executeSearch(KW[k],'key',k);return;}}
   if(u.length===10){const bId=u[4],fl=u[5],c7=u[6],c8=u[7],isWS=isNaN(u[9]);
     if(isWS){if(fl!==c7){showToast('تنبيه: رقم الدور غير متطابق');return;}}
@@ -384,6 +386,7 @@ function executeSearch(bId,type,data){
   const fN={"0":"الأرضي","1":"الأول","2":"الثاني","3":"الثالث"};
   let det='';
   if(type==='key'||!data)det=`<b>القسم:</b> ${b.dept}<br><b>عدد الأدوار:</b> ${b.fl} ${b.fl===1?'دور':'أدوار'}`;
+  else if(type==='floor')det=`<b>القسم:</b> ${b.dept}<br><b>الدور:</b> ${fN[data.f]||data.f}`;
   else{const roomNum=data.r.replace(/[A-Za-z]+$/,'');
     det=`<b>الدور:</b> ${fN[data.f]||data.f}<br><b>رقم القاعة:</b> ${roomNum}`;}
   document.getElementById('icdet').innerHTML=det;
