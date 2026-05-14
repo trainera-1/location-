@@ -36,7 +36,7 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);ov
 .xcl{background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.4);color:#e74c3c;width:36px;height:36px;border-radius:8px;font-size:1rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
 #satView{position:absolute;inset:0;z-index:1}#map{width:100%;height:100%}
 #view3d{position:absolute;inset:0;z-index:2;display:none}
-#c3d{width:100%;height:100%;display:block;touch-action:none}
+#c3d{width:100%;height:100%;display:block;touch-action:none;-webkit-touch-callout:none;user-select:none}
 #loading3d{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
 .ldspin{width:44px;height:44px;border:4px solid rgba(212,175,55,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .9s linear infinite;margin:0 auto 14px}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -96,7 +96,10 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);ov
     <div id="loading3d">
       <div class="ldspin"></div>
       <div class="ldtxt">جاري تحميل النموذج ثلاثي الأبعاد</div>
-      <div class="ldsub">يرجى الانتظار...</div>
+      <div class="ldsub" id="ldpct">0%</div>
+      <div style="width:180px;height:4px;background:rgba(212,175,55,.15);border-radius:2px;margin:10px auto 0">
+        <div id="ldbar" style="height:100%;width:0%;background:var(--gold);border-radius:2px;transition:width .2s"></div>
+      </div>
     </div>
     <div class="hint3d">اسحب للتدوير &bull; ضغطتان للتكبير &bull; اضغط مبنى للمعلومات</div>
   </div>
@@ -183,6 +186,7 @@ let tdrag=false,tpinch=false,td0={x:0,y:0},tdist=0;
 let camAnim=null,selId=null,prevT=0;
 const bMeshes={};
 let navPath=null,navDot=null,navDotT=0,navCurve=null,uDot3=null;
+let glbLoaded=false,glbLoading=false;
 
 const lerp=(a,b,t)=>a+(b-a)*t;
 const ease=t=>t<0.5?2*t*t:-1+(4-2*t)*t;
@@ -202,16 +206,6 @@ function init3D(){
   sun.shadow.camera.left=-280;sun.shadow.camera.right=280;sun.shadow.camera.top=280;sun.shadow.camera.bottom=-280;
   S3.add(sun);
   const fill=new THREE.DirectionalLight(0xb0d0ff,0.3);fill.position.set(-150,100,-100);S3.add(fill);
-  const loader=new GLTFLoader();
-  loader.load('./campus.glb',gltf=>{
-    S3.add(gltf.scene);
-    gltf.scene.traverse(obj=>{
-      if(!obj.isMesh)return;
-      const m=obj.name.match(/^B(\d)/);
-      if(m){const id=m[1];if(!bMeshes[id])bMeshes[id]=[];bMeshes[id].push(obj);obj.castShadow=true;obj.receiveShadow=true;}
-    });
-    document.getElementById('loading3d').style.display='none';
-  },null,err=>console.error('GLB:',err));
   resize3D();window.addEventListener('resize',resize3D);bindTouch(cv);renderLoop();
 }
 
@@ -243,6 +237,29 @@ function renderLoop(t=0){
 }
 
 function resize3D(){if(!R3)return;R3.setSize(innerWidth,innerHeight);C3.aspect=innerWidth/innerHeight;C3.updateProjectionMatrix();}
+
+function loadGLB(cb){
+  if(glbLoaded){cb&&cb();return;}
+  if(glbLoading)return;
+  glbLoading=true;
+  document.getElementById('loading3d').style.display='block';
+  const loader=new GLTFLoader();
+  loader.load('./campus.glb',gltf=>{
+    S3.add(gltf.scene);
+    gltf.scene.traverse(obj=>{
+      if(!obj.isMesh)return;
+      const m=obj.name.match(/^B(\d)/);
+      if(m){const id=m[1];if(!bMeshes[id])bMeshes[id]=[];bMeshes[id].push(obj);obj.castShadow=true;obj.receiveShadow=true;}
+    });
+    glbLoaded=true;glbLoading=false;
+    document.getElementById('loading3d').style.display='none';
+    cb&&cb();
+  },xhr=>{
+    if(xhr.lengthComputable){const p=Math.round(xhr.loaded/xhr.total*100);
+      document.getElementById('ldpct').textContent=p+'%';
+      document.getElementById('ldbar').style.width=p+'%';}
+  },err=>{console.error('GLB:',err);glbLoading=false;});
+}
 
 function flyToBuilding(id){
   const p=toXZ(BLDGS[id].gps);const angle=Math.atan2(p.x,p.z);
@@ -330,7 +347,7 @@ function toggle3D(){
   document.getElementById('view3d').style.display=is3D?'block':'none';
   document.getElementById('btn3d').classList.toggle('on',is3D);
   document.getElementById('btnGPS').style.display=is3D?'none':'flex';
-  if(is3D){resize3D();if(isNav&&dest){draw3DNavPath();flyToBuilding(dest.bId);}}
+  if(is3D){resize3D();loadGLB(()=>{if(isNav&&dest){draw3DNavPath();flyToBuilding(dest.bId);}});}
 }
 
 async function startApp(){
@@ -385,7 +402,7 @@ function startJourney(){
   document.getElementById('statusBar').style.display='block';
   document.getElementById('sBldg').textContent=dest.b.name;
   if(!is3D)toggle3D();
-  draw3DNavPath();flyToBuilding(dest.bId);
+  loadGLB(()=>{draw3DNavPath();flyToBuilding(dest.bId);});
   if(lastGPS&&map){const b=dest.b;
     if(dMark)map.removeLayer(dMark);
     dMark=L.marker(b.gps,{icon:L.divIcon({className:'',
