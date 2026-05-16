@@ -52,6 +52,11 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);ov
 .ibadge{flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px;text-align:center}
 .bv{color:var(--gold);font-size:1.15rem;font-weight:900}.bl{color:#444;font-size:.72rem;margin-top:3px}
 .gobtn{background:linear-gradient(135deg,#1a6e2e,var(--green));color:#fff;border:none;padding:15px;border-radius:12px;font-weight:900;width:100%;margin-top:14px;font-size:1.05rem;cursor:pointer;font-family:var(--font);letter-spacing:.3px}
+#parkChoices{margin-top:14px;gap:10px;flex-direction:column}
+.pchoice{background:rgba(41,128,185,.10);border:1.5px solid rgba(41,128,185,.45);color:#fff;padding:14px 16px;border-radius:12px;width:100%;cursor:pointer;font-family:var(--font);text-align:right;transition:background .15s,transform .1s}
+.pchoice:active{background:rgba(41,128,185,.28);transform:scale(.98)}
+.pclabel{color:#7fc8e8;font-weight:900;font-size:.95rem}
+.pcdist{color:#666;font-size:.8rem;margin-top:5px}
 .sctrl{position:absolute;top:50%;right:15px;transform:translateY(-50%);z-index:2000;display:flex;flex-direction:column;gap:10px}
 .bs{background:rgba(0,0,0,.88);color:var(--gold);border:1.5px solid rgba(212,175,55,.45);width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer;font-family:var(--font);backdrop-filter:blur(6px);transition:all .15s;font-weight:700}
 .bs:active{background:rgba(212,175,55,.12);transform:scale(.93)}.bs.on{background:rgba(212,175,55,.18);border-color:var(--gold)}
@@ -113,7 +118,11 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);ov
       <div class="ibadge"><div class="bv" id="mdist">—</div><div class="bl">المسافة (م)</div></div>
       <div class="ibadge"><div class="bv" id="meta">—</div><div class="bl">وقت الوصول</div></div>
     </div>
-    <button class="gobtn" onclick="startJourney()">انطلاق للوجهة &#x27A4;</button>
+    <button class="gobtn" id="gobtn" onclick="startJourney()">انطلاق للوجهة &#x27A4;</button>
+    <div id="parkChoices" style="display:none">
+      <button class="pchoice" id="pchoice1" onclick="pickParking('p1')"></button>
+      <button class="pchoice" id="pchoice2" onclick="pickParking('p2')"></button>
+    </div>
   </div>
   <div class="sctrl">
     <button class="bs" id="btn3d" style="opacity:.45;cursor:not-allowed" title="قريباً">3D</button>
@@ -162,8 +171,9 @@ const POI={
 const KW_POI={
   "موقف شمالي":"p1","موقف المتدربين الشمالي":"p1",
   "موقف جنوبي":"p2","موقف المتدربين الجنوبي":"p2",
-  "موقف المتدربين":"nearest_p","مواقف المتدربين":"nearest_p",
-  "موقف":"nearest_p","مواقف":"nearest_p","باركينج":"nearest_p","ركن":"nearest_p",
+  "موقف المتدربين":"parking_choice","مواقف المتدربين":"parking_choice",
+  "موقف الموظفين":"parking_choice","موقف الإداريين":"parking_choice","موقف المدربين":"parking_choice",
+  "موقف":"parking_choice","مواقف":"parking_choice","باركينج":"parking_choice","ركن":"parking_choice",
   "بوابة المتدربين":"g1","دخول المتدربين":"g1","مدخل المتدربين":"g1",
   "بوابة الإداريين":"g2","إداريين":"g2","موظفين":"g2",
   "بوابة":"g1","مدخل":"g1",
@@ -395,6 +405,7 @@ function executeSearch(bId,type,data){
   const b=BLDGS[bId];if(!b)return;
   isNav=false;arrived=false;dest={bId,b};
   document.getElementById('statusBar').style.display='none';
+  resetCardMode();
   const ne=document.getElementById('icnum');
   ne.textContent=bId;ne.style.background=b.clr+'22';ne.style.color=b.clr;ne.style.border='2px solid '+b.clr+'44';
   document.getElementById('icname').textContent=b.name;
@@ -419,14 +430,43 @@ function executeSearch(bId,type,data){
   document.getElementById('icard').style.display='block';
 }
 
+function resetCardMode(){
+  document.getElementById('gobtn').style.display='block';
+  document.getElementById('parkChoices').style.display='none';
+}
+
+function showParkingChoice(){
+  isNav=false;arrived=false;dest=null;
+  document.getElementById('statusBar').style.display='none';
+  const ne=document.getElementById('icnum');
+  ne.textContent='P';ne.style.background='#2980b922';ne.style.color='#2980b9';ne.style.border='2px solid #2980b944';
+  document.getElementById('icname').textContent='مواقف السيارات';
+  document.getElementById('iccat').textContent='اختر الموقف المناسب';
+  document.getElementById('icdet').innerHTML='موقفان متاحان — اضغط أحدهما للانطلاق فوراً';
+  document.getElementById('mdist').textContent='—';document.getElementById('meta').textContent='—';
+  ['p1','p2'].forEach((pid,i)=>{
+    const p=POI[pid],btn=document.getElementById(`pchoice${i+1}`);
+    let dist='';
+    if(lastGPS&&map){const d=map.distance(lastGPS,p.gps);dist=`<div class="pcdist">${Math.round(d)} م &bull; ~${Math.max(1,Math.round(d/WS))} د مشياً</div>`;}
+    btn.innerHTML=`<div class="pclabel">${p.name}</div>${dist}`;
+  });
+  document.getElementById('gobtn').style.display='none';
+  document.getElementById('parkChoices').style.display='flex';
+  document.getElementById('icard').style.display='block';
+}
+
+function pickParking(pid){
+  resetCardMode();
+  executePOI(pid);
+  startJourney();
+}
+
 function executePOI(pid){
-  if(pid==='nearest_p'){
-    if(lastGPS&&map){const d1=map.distance(lastGPS,POI.p1.gps),d2=map.distance(lastGPS,POI.p2.gps);pid=d1<=d2?'p1':'p2';}
-    else pid='p1';
-  }
+  if(pid==='parking_choice'){showParkingChoice();return;}
   const p=POI[pid];if(!p)return;
   isNav=false;arrived=false;dest={poiId:pid,poi:p};
   document.getElementById('statusBar').style.display='none';
+  resetCardMode();
   const ne=document.getElementById('icnum');
   ne.textContent=p.icon;ne.style.background=p.clr+'22';ne.style.color=p.clr;ne.style.border='2px solid '+p.clr+'44';
   document.getElementById('icname').textContent=p.name;
@@ -478,6 +518,7 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 
 window.startApp=startApp;window.toggle3D=toggle3D;window.startJourney=startJourney;
 window.cancelJourney=cancelJourney;window.centerOnUser=centerOnUser;window.dismissArrival=dismissArrival;
+window.pickParking=pickParking;
 window.doZoom=function(dir){if(map){if(dir>0)map.zoomIn();else map.zoomOut();}};
 </script>
 </body>
