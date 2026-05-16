@@ -33,6 +33,8 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);ov
 #statusBar{position:absolute;top:88px;left:12px;right:12px;z-index:1999;background:rgba(0,0,0,.9);border:1px solid var(--gold);border-radius:14px;padding:10px 14px;display:none;backdrop-filter:blur(8px)}
 .srow{display:flex;align-items:center;justify-content:space-between;gap:10px}.sinfo{flex:1}
 .sbldg{color:var(--gold-l);font-weight:800;font-size:.92rem}.sdist{color:var(--green);font-size:.82rem;margin-top:3px;font-weight:700}.seta{color:#888;font-size:.75rem;margin-top:2px}
+.srtags{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap}
+.srtag{background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.28);color:var(--gold-l);font-size:.72rem;padding:2px 9px;border-radius:20px;font-weight:700;white-space:nowrap}
 .xcl{background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.4);color:#e74c3c;width:36px;height:36px;border-radius:8px;font-size:1rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
 #satView{position:absolute;inset:0;z-index:1}#map{width:100%;height:100%}
 #view3d{position:absolute;inset:0;z-index:2;display:none}
@@ -89,6 +91,11 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);ov
     <div class="srow">
       <div class="sinfo">
         <div class="sbldg" id="sBldg"></div>
+        <div class="srtags" id="sRoomInfo" style="display:none">
+          <span class="srtag" id="sTagBldg"></span>
+          <span class="srtag" id="sTagFloor"></span>
+          <span class="srtag" id="sTagRoom" style="display:none"></span>
+        </div>
         <div class="sdist" id="sDist"></div>
         <div class="seta" id="sEta"></div>
       </div>
@@ -409,7 +416,7 @@ document.getElementById('roomInput').addEventListener('input',function(e){
 
 function executeSearch(bId,type,data){
   const b=BLDGS[bId];if(!b)return;
-  isNav=false;arrived=false;dest={bId,b};
+  isNav=false;arrived=false;dest={bId,b,navType:type,navData:data};
   document.getElementById('statusBar').style.display='none';
   resetCardMode();
   const ne=document.getElementById('icnum');
@@ -499,6 +506,18 @@ function startJourney(){
   document.getElementById('statusBar').style.display='block';
   const tgt=dest.poi||dest.b;
   document.getElementById('sBldg').textContent=tgt.name;
+  const fN={"0":"الأرضي","1":"الأول","2":"الثاني","3":"الثالث"};
+  const infoEl=document.getElementById('sRoomInfo');
+  const tagRoom=document.getElementById('sTagRoom');
+  if(dest.bId&&dest.navType&&dest.navType!=='key'&&dest.navData){
+    document.getElementById('sTagBldg').textContent='مبنى '+dest.bId;
+    document.getElementById('sTagFloor').textContent='الدور: '+(fN[dest.navData.f]||dest.navData.f);
+    if((dest.navType==='code'||dest.navType==='workshop')&&dest.navData.r){
+      tagRoom.textContent='قاعة: '+dest.navData.r.replace(/[A-Za-z]+$/,'');
+      tagRoom.style.display='';
+    }else{tagRoom.style.display='none';}
+    infoEl.style.display='flex';
+  }else{infoEl.style.display='none';}
   if(lastGPS&&map){
     if(dMark)map.removeLayer(dMark);
     dMark=L.marker(tgt.gps,{icon:L.divIcon({className:'',
