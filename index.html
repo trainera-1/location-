@@ -52,6 +52,11 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);ov
 .ibadge{flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px;text-align:center}
 .bv{color:var(--gold);font-size:1.15rem;font-weight:900}.bl{color:#444;font-size:.72rem;margin-top:3px}
 .gobtn{background:linear-gradient(135deg,#1a6e2e,var(--green));color:#fff;border:none;padding:15px;border-radius:12px;font-weight:900;width:100%;margin-top:14px;font-size:1.05rem;cursor:pointer;font-family:var(--font);letter-spacing:.3px}
+#parkChoices{margin-top:14px;gap:10px;flex-direction:column}
+.pchoice{background:rgba(41,128,185,.10);border:1.5px solid rgba(41,128,185,.45);color:#fff;padding:14px 16px;border-radius:12px;width:100%;cursor:pointer;font-family:var(--font);text-align:right;transition:background .15s,transform .1s}
+.pchoice:active{background:rgba(41,128,185,.28);transform:scale(.98)}
+.pclabel{color:#7fc8e8;font-weight:900;font-size:.95rem}
+.pcdist{color:#666;font-size:.8rem;margin-top:5px}
 .sctrl{position:absolute;top:50%;right:15px;transform:translateY(-50%);z-index:2000;display:flex;flex-direction:column;gap:10px}
 .bs{background:rgba(0,0,0,.88);color:var(--gold);border:1.5px solid rgba(212,175,55,.45);width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer;font-family:var(--font);backdrop-filter:blur(6px);transition:all .15s;font-weight:700}
 .bs:active{background:rgba(212,175,55,.12);transform:scale(.93)}.bs.on{background:rgba(212,175,55,.18);border-color:var(--gold)}
@@ -113,7 +118,11 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);ov
       <div class="ibadge"><div class="bv" id="mdist">—</div><div class="bl">المسافة (م)</div></div>
       <div class="ibadge"><div class="bv" id="meta">—</div><div class="bl">وقت الوصول</div></div>
     </div>
-    <button class="gobtn" onclick="startJourney()">انطلاق للوجهة &#x27A4;</button>
+    <button class="gobtn" id="gobtn" onclick="startJourney()">انطلاق للوجهة &#x27A4;</button>
+    <div id="parkChoices" style="display:none">
+      <button class="pchoice" id="pchoice1" onclick="pickParking('p1')"></button>
+      <button class="pchoice" id="pchoice2" onclick="pickParking('p2')"></button>
+    </div>
   </div>
   <div class="sctrl">
     <button class="bs" id="btn3d" style="opacity:.45;cursor:not-allowed" title="قريباً">3D</button>
@@ -151,8 +160,25 @@ const BLDGS={
   "7":{name:"مبنى 7 - التقنية الميكانيكية",dept:"قسم التقنية الميكانيكية",gps:[31.3904349,37.3098989],clr:"#4a7a6a",fl:3},
   "8":{name:"مبنى 8 - العمادة",dept:"عمادة الكلية",gps:[31.3898115,37.3093759],clr:"#8a7a4a",fl:2}
 };
-const KW={"بوفيه":"4","كافتيريا":"4","مصلى":"5","جامع":"5","عمادة":"8","مسرح":"1","أنشطة":"1","شبكات":"2","دعم":"2","محاسبة":"3","دراسات":"3","ميكانيكا":"6","ورش":"6","ورشة":"6","تقنية":"7","حاسب":"2"};
-const KWF={"شؤون المتدربين":{b:"8",f:"1"},"شؤون طلاب":{b:"8",f:"1"},"شؤون":{b:"8",f:"1"},"متدربين":{b:"8",f:"1"}};
+const KW={"بوفيه":"4","كافتيريا":"4","مصلى":"5","مسجد":"5","جامع":"5","صلاة":"5","عمادة":"8","مسرح":"1","أنشطة":"1","شبكات":"2","دعم":"2","محاسبة":"3","دراسات":"3","ميكانيكا":"6","ورش":"6","ورشة":"6","تقنية":"7","حاسب":"2"};
+const KWF={"شؤون المتدربين":{b:"8",f:"1"},"شؤون طلاب":{b:"8",f:"1"},"شؤون":{b:"8",f:"1"},"متدربين":{b:"8",f:"1"},"مكتبة":{b:"2",f:"1"},"مكتبه":{b:"2",f:"1"}};
+const POI={
+  "p1":{name:"موقف المتدربين الشمالي",dept:"مواقف المتدربين",gps:[31.3913046,37.3110640],clr:"#2980b9",icon:"P"},
+  "p2":{name:"موقف المتدربين الجنوبي",dept:"مواقف المتدربين",gps:[31.3882877,37.3122720],clr:"#2980b9",icon:"P"},
+  "sp1":{name:"موقف المدربين والموظفين الأول",dept:"مواقف المدربين والموظفين",gps:[31.3933409,37.3124819],clr:"#8e44ad",icon:"P"},
+  "sp2":{name:"موقف المدربين والموظفين الثاني",dept:"مواقف المدربين والموظفين",gps:[31.3889809,37.3087794],clr:"#8e44ad",icon:"P"},
+};
+const KW_POI={
+  "موقف المتدربين الشمالي":"p1","موقف شمالي":"p1",
+  "موقف المتدربين الجنوبي":"p2","موقف جنوبي":"p2",
+  "موقف المدربين الأول":"sp1","موقف الموظفين الأول":"sp1",
+  "موقف المدربين الثاني":"sp2","موقف الموظفين الثاني":"sp2",
+  "موقف المتدربين":"parking_student","مواقف المتدربين":"parking_student",
+  "موقف المدربين":"parking_staff","مواقف المدربين":"parking_staff",
+  "موقف الموظفين":"parking_staff","مواقف الموظفين":"parking_staff",
+  "موقف الإداريين":"parking_staff","مواقف الإداريين":"parking_staff",
+  "موقف":"parking_student","مواقف":"parking_student","باركينج":"parking_student","ركن":"parking_student",
+};
 const LM=111000,LG=111000*Math.cos(CC[0]*Math.PI/180);
 function toXZ(g){return{x:(g[1]-CC[1])*LG,z:-(g[0]-CC[0])*LM};}
 
@@ -290,7 +316,7 @@ function draw3DNavPath(){
   if(!dest)return;
   if(navPath){S3.remove(navPath);navPath.geometry.dispose();navPath=null;}
   const from=lastGPS?toXZ(lastGPS):{x:0,z:0};
-  const to=toXZ(dest.b.gps);
+  const to=toXZ((dest.poi||dest.b).gps);
   const pts=[];
   for(let i=0;i<=40;i++){const t=i/40;pts.push(new THREE.Vector3(from.x+(to.x-from.x)*t,2+Math.sin(t*Math.PI)*14,from.z+(to.z-from.z)*t));}
   navCurve=new THREE.CatmullRomCurve3(pts);
@@ -353,7 +379,7 @@ function toggle3D(){
   document.getElementById('view3d').style.display=is3D?'block':'none';
   document.getElementById('btn3d').classList.toggle('on',is3D);
   document.getElementById('btnGPS').style.display=is3D?'none':'flex';
-  if(is3D){resize3D();loadGLB(()=>{if(isNav&&dest){draw3DNavPath();flyToBuilding(dest.bId);}});}
+  if(is3D){resize3D();loadGLB(()=>{if(isNav&&dest){draw3DNavPath();if(dest.bId)flyToBuilding(dest.bId);}});}
 }
 
 async function startApp(){
@@ -367,6 +393,7 @@ async function startApp(){
 
 document.getElementById('roomInput').addEventListener('input',function(e){
   const v=e.target.value.trim(),u=v.toUpperCase();
+  for(const k in KW_POI){if(v.includes(k)){executePOI(KW_POI[k]);return;}}
   for(const k in KWF){if(v.includes(k)){const d=KWF[k];executeSearch(d.b,'floor',{f:d.f});return;}}
   for(const k in KW){if(v.includes(k)){executeSearch(KW[k],'key',k);return;}}
   if(u.length===10){const bId=u[4],fl=u[5],c7=u[6],c8=u[7],isWS=isNaN(u[9]);
@@ -379,6 +406,7 @@ function executeSearch(bId,type,data){
   const b=BLDGS[bId];if(!b)return;
   isNav=false;arrived=false;dest={bId,b};
   document.getElementById('statusBar').style.display='none';
+  resetCardMode();
   const ne=document.getElementById('icnum');
   ne.textContent=bId;ne.style.background=b.clr+'22';ne.style.color=b.clr;ne.style.border='2px solid '+b.clr+'44';
   document.getElementById('icname').textContent=b.name;
@@ -403,17 +431,74 @@ function executeSearch(bId,type,data){
   document.getElementById('icard').style.display='block';
 }
 
+function resetCardMode(){
+  document.getElementById('gobtn').style.display='block';
+  document.getElementById('parkChoices').style.display='none';
+}
+
+function showParkingChoice(pids,label,clr){
+  isNav=false;arrived=false;dest=null;
+  document.getElementById('statusBar').style.display='none';
+  const ne=document.getElementById('icnum');
+  ne.textContent='P';ne.style.background=clr+'22';ne.style.color=clr;ne.style.border='2px solid '+clr+'44';
+  document.getElementById('icname').textContent=label;
+  document.getElementById('iccat').textContent='اختر الموقف المناسب';
+  document.getElementById('icdet').innerHTML='موقفان متاحان — اضغط أحدهما للانطلاق فوراً';
+  document.getElementById('mdist').textContent='—';document.getElementById('meta').textContent='—';
+  pids.forEach((pid,i)=>{
+    const p=POI[pid],btn=document.getElementById(`pchoice${i+1}`);
+    let dist='';
+    if(lastGPS&&map){const d=map.distance(lastGPS,p.gps);dist=`<div class="pcdist">${Math.round(d)} م &bull; ~${Math.max(1,Math.round(d/WS))} د مشياً</div>`;}
+    btn.innerHTML=`<div class="pclabel">${p.name}</div>${dist}`;
+    btn.onclick=()=>window.pickParking(pid);
+  });
+  document.getElementById('gobtn').style.display='none';
+  document.getElementById('parkChoices').style.display='flex';
+  document.getElementById('icard').style.display='block';
+}
+
+function pickParking(pid){
+  resetCardMode();
+  executePOI(pid);
+  startJourney();
+}
+
+function executePOI(pid){
+  if(pid==='parking_student'){showParkingChoice(['p1','p2'],'مواقف المتدربين','#2980b9');return;}
+  if(pid==='parking_staff'){showParkingChoice(['sp1','sp2'],'مواقف المدربين والموظفين','#8e44ad');return;}
+  const p=POI[pid];if(!p)return;
+  isNav=false;arrived=false;dest={poiId:pid,poi:p};
+  document.getElementById('statusBar').style.display='none';
+  resetCardMode();
+  const ne=document.getElementById('icnum');
+  ne.textContent=p.icon;ne.style.background=p.clr+'22';ne.style.color=p.clr;ne.style.border='2px solid '+p.clr+'44';
+  document.getElementById('icname').textContent=p.name;
+  document.getElementById('iccat').textContent=p.dept;
+  document.getElementById('icdet').innerHTML=`<b>النوع:</b> ${p.dept}<br><b>الموقع:</b> داخل الحرم الجامعي`;
+  if(lastGPS&&map&&!is3D){
+    const d=map.distance(lastGPS,p.gps),eta=Math.max(1,Math.round(d/WS));
+    document.getElementById('mdist').textContent=Math.round(d);document.getElementById('meta').textContent=eta+' د';
+    if(dMark)map.removeLayer(dMark);
+    dMark=L.marker(p.gps,{icon:L.divIcon({className:'',
+      html:`<div style="width:22px;height:22px;border-radius:6px;background:${p.clr};border:2px solid #fff;box-shadow:0 0 12px ${p.clr}99;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:.75rem">${p.icon}</div>`,
+      iconSize:[22,22],iconAnchor:[11,11]})}).addTo(map).bindPopup(p.name).openPopup();
+    map.flyTo(p.gps,19);drawRoute(lastGPS,p.gps,d);
+  }else{document.getElementById('mdist').textContent='—';document.getElementById('meta').textContent='—';}
+  document.getElementById('icard').style.display='block';
+}
+
 function startJourney(){
   if(!dest)return;isNav=true;arrived=false;
   document.getElementById('icard').style.display='none';
   document.getElementById('statusBar').style.display='block';
-  document.getElementById('sBldg').textContent=dest.b.name;
-  if(lastGPS&&map){const b=dest.b;
+  const tgt=dest.poi||dest.b;
+  document.getElementById('sBldg').textContent=tgt.name;
+  if(lastGPS&&map){
     if(dMark)map.removeLayer(dMark);
-    dMark=L.marker(b.gps,{icon:L.divIcon({className:'',
-      html:`<div style="width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid ${b.clr};box-shadow:0 0 12px ${b.clr}99"></div>`,
+    dMark=L.marker(tgt.gps,{icon:L.divIcon({className:'',
+      html:`<div style="width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid ${tgt.clr};box-shadow:0 0 12px ${tgt.clr}99"></div>`,
       iconSize:[16,16],iconAnchor:[8,8]})}).addTo(map);
-    drawRoute(lastGPS,b.gps,map.distance(lastGPS,b.gps));}
+    drawRoute(lastGPS,tgt.gps,map.distance(lastGPS,tgt.gps));}
 }
 
 function cancelJourney(){
@@ -426,7 +511,7 @@ function cancelJourney(){
 
 function showArrival(){
   if(navigator.vibrate)navigator.vibrate([200,100,200,100,500]);
-  document.getElementById('arsub').textContent=dest?.b.dept||'';
+  document.getElementById('arsub').textContent=(dest?.poi||dest?.b)?.dept||'';
   document.getElementById('arrival').classList.add('show');
   document.getElementById('sDist').textContent='وصلت إلى وجهتك';document.getElementById('sEta').textContent='';
 }
@@ -436,6 +521,7 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 
 window.startApp=startApp;window.toggle3D=toggle3D;window.startJourney=startJourney;
 window.cancelJourney=cancelJourney;window.centerOnUser=centerOnUser;window.dismissArrival=dismissArrival;
+window.pickParking=pickParking;
 window.doZoom=function(dir){if(map){if(dir>0)map.zoomIn();else map.zoomOut();}};
 </script>
 </body>
