@@ -409,7 +409,8 @@ document.getElementById('roomInput').addEventListener('input',function(e){
   for(const k in KWF){if(v.includes(k)){const d=KWF[k];executeSearch(d.b,'floor',{f:d.f});return;}}
   for(const k in KW){if(v.includes(k)){executeSearch(KW[k],'key',k);return;}}
   if(u.length===10){const bId=u[4],fl=u[5],c7=u[6],c8=u[7],isWS=isNaN(u[9]);
-    if(bId==='8'){showToast('مبنى 8 مخصص للإدارة والعمادة — لا توجد قاعات دراسية');return;}
+    const NO_ROOMS={'1':'الأنشطة والمسرح','4':'الكافتيريا','5':'المصلى والجامع','8':'العمادة والإدارة'};
+    if(NO_ROOMS[bId]){showToast(`مبنى ${bId} — ${NO_ROOMS[bId]} — لا توجد قاعات دراسية`);return;}
     if(isWS){if(fl!==c7){showToast('تنبيه: رقم الدور غير متطابق');return;}}
     else{if(fl!==c8){showToast('تنبيه: رقم الدور غير متطابق');return;}}
     executeSearch(bId,isWS?'workshop':'code',{f:fl,r:u.substring(isWS?6:7)});}
