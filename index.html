@@ -165,19 +165,24 @@ const KWF={"شؤون المتدربين":{b:"8",f:"1"},"شؤون طلاب":{b:"8
 const POI={
   "p1":{name:"موقف المتدربين الشمالي",dept:"مواقف المتدربين",gps:[31.3913046,37.3110640],clr:"#2980b9",icon:"P"},
   "p2":{name:"موقف المتدربين الجنوبي",dept:"مواقف المتدربين",gps:[31.3882877,37.3122720],clr:"#2980b9",icon:"P"},
-  "sp1":{name:"موقف المدربين والموظفين الأول",dept:"مواقف المدربين والموظفين",gps:[31.3933409,37.3124819],clr:"#8e44ad",icon:"P"},
-  "sp2":{name:"موقف المدربين والموظفين الثاني",dept:"مواقف المدربين والموظفين",gps:[31.3889809,37.3087794],clr:"#8e44ad",icon:"P"},
+  "sp1":{name:"موقف الإداريين والموظفين والزوار",dept:"مواقف الموظفين والإداريين",gps:[31.3903344,37.3090231],clr:"#8e44ad",icon:"P"},
+  "sp2":{name:"موقف المدربين",dept:"مواقف المدربين",gps:[31.3880682,37.3099441],clr:"#8e44ad",icon:"P"},
+  "g1":{name:"بوابة دخول المتدربين",dept:"بوابات الكلية",gps:[31.3933409,37.3124819],clr:"#27ae60",icon:"B"},
+  "g2":{name:"بوابة دخول الإداريين والموظفين والزوار",dept:"بوابات الكلية",gps:[31.3889809,37.3087794],clr:"#e67e22",icon:"B"},
+  "field1":{name:"ملعب الكلية",dept:"المرافق الرياضية",gps:[31.3899958,37.3128087],clr:"#27ae60",icon:"⚽"},
 };
 const KW_POI={
   "موقف المتدربين الشمالي":"p1","موقف شمالي":"p1",
   "موقف المتدربين الجنوبي":"p2","موقف جنوبي":"p2",
-  "موقف المدربين الأول":"sp1","موقف الموظفين الأول":"sp1",
-  "موقف المدربين الثاني":"sp2","موقف الموظفين الثاني":"sp2",
+  "موقف الإداريين والموظفين":"sp1","موقف الزوار":"sp1","موقف الإداريين":"sp1",
+  "موقف المدربين":"sp2","موقف موظفين":"sp1",
   "موقف المتدربين":"parking_student","مواقف المتدربين":"parking_student",
-  "موقف المدربين":"parking_staff","مواقف المدربين":"parking_staff",
-  "موقف الموظفين":"parking_staff","مواقف الموظفين":"parking_staff",
-  "موقف الإداريين":"parking_staff","مواقف الإداريين":"parking_staff",
+  "مواقف المدربين":"parking_staff","مواقف الموظفين":"parking_staff","مواقف الإداريين":"parking_staff",
   "موقف":"parking_student","مواقف":"parking_student","باركينج":"parking_student","ركن":"parking_student",
+  "بوابة المتدربين":"g1","دخول المتدربين":"g1","مدخل المتدربين":"g1",
+  "بوابة الإداريين":"g2","بوابة الموظفين":"g2","بوابة الزوار":"g2","بوابة المدربين":"g2",
+  "بوابة":"gates_choice","مدخل":"gates_choice","دخول":"gates_choice","بوابه":"gates_choice",
+  "ملعب الكلية":"field1","ملعب كرة قدم":"field1","ملعب كرة":"field1","ملعب":"field1","كرة قدم":"field1","ملاعب":"field1",
 };
 const LM=111000,LG=111000*Math.cos(CC[0]*Math.PI/180);
 function toXZ(g){return{x:(g[1]-CC[1])*LG,z:-(g[0]-CC[0])*LM};}
@@ -439,11 +444,12 @@ function resetCardMode(){
 function showParkingChoice(pids,label,clr){
   isNav=false;arrived=false;dest=null;
   document.getElementById('statusBar').style.display='none';
+  const isGate=pids[0]==='g1'||pids[0]==='g2';
   const ne=document.getElementById('icnum');
-  ne.textContent='P';ne.style.background=clr+'22';ne.style.color=clr;ne.style.border='2px solid '+clr+'44';
+  ne.textContent=isGate?'B':'P';ne.style.background=clr+'22';ne.style.color=clr;ne.style.border='2px solid '+clr+'44';
   document.getElementById('icname').textContent=label;
-  document.getElementById('iccat').textContent='اختر الموقف المناسب';
-  document.getElementById('icdet').innerHTML='موقفان متاحان — اضغط أحدهما للانطلاق فوراً';
+  document.getElementById('iccat').textContent=isGate?'اختر البوابة المناسبة':'اختر الموقف المناسب';
+  document.getElementById('icdet').innerHTML=isGate?'بوابتان متاحتان — اضغط إحداهما للانطلاق فوراً':'موقفان متاحان — اضغط أحدهما للانطلاق فوراً';
   document.getElementById('mdist').textContent='—';document.getElementById('meta').textContent='—';
   pids.forEach((pid,i)=>{
     const p=POI[pid],btn=document.getElementById(`pchoice${i+1}`);
@@ -465,7 +471,8 @@ function pickParking(pid){
 
 function executePOI(pid){
   if(pid==='parking_student'){showParkingChoice(['p1','p2'],'مواقف المتدربين','#2980b9');return;}
-  if(pid==='parking_staff'){showParkingChoice(['sp1','sp2'],'مواقف المدربين والموظفين','#8e44ad');return;}
+  if(pid==='parking_staff'){showParkingChoice(['sp1','sp2'],'مواقف الموظفين والمدربين','#8e44ad');return;}
+  if(pid==='gates_choice'){showParkingChoice(['g1','g2'],'بوابات الكلية','#27ae60');return;}
   const p=POI[pid];if(!p)return;
   isNav=false;arrived=false;dest={poiId:pid,poi:p};
   document.getElementById('statusBar').style.display='none';
