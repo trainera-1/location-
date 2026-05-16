@@ -163,20 +163,21 @@ const BLDGS={
 const KW={"بوفيه":"4","كافتيريا":"4","مصلى":"5","مسجد":"5","جامع":"5","صلاة":"5","عمادة":"8","مسرح":"1","أنشطة":"1","شبكات":"2","دعم":"2","محاسبة":"3","دراسات":"3","ميكانيكا":"6","ورش":"6","ورشة":"6","تقنية":"7","حاسب":"2"};
 const KWF={"شؤون المتدربين":{b:"8",f:"1"},"شؤون طلاب":{b:"8",f:"1"},"شؤون":{b:"8",f:"1"},"متدربين":{b:"8",f:"1"},"مكتبة":{b:"2",f:"1"},"مكتبه":{b:"2",f:"1"}};
 const POI={
-  "p1":{name:"موقف المتدربين الشمالي",dept:"مواقف السيارات",gps:[31.3913046,37.3110640],clr:"#2980b9",icon:"P"},
-  "p2":{name:"موقف المتدربين الجنوبي",dept:"مواقف السيارات",gps:[31.3882877,37.3122720],clr:"#2980b9",icon:"P"},
-  "g1":{name:"بوابة دخول المتدربين",dept:"بوابات الكلية",gps:[31.3933409,37.3124819],clr:"#27ae60",icon:"B"},
-  "g2":{name:"بوابة الإداريين والموظفين",dept:"بوابات الكلية",gps:[31.3889809,37.3087794],clr:"#8e44ad",icon:"B"},
+  "p1":{name:"موقف المتدربين الشمالي",dept:"مواقف المتدربين",gps:[31.3913046,37.3110640],clr:"#2980b9",icon:"P"},
+  "p2":{name:"موقف المتدربين الجنوبي",dept:"مواقف المتدربين",gps:[31.3882877,37.3122720],clr:"#2980b9",icon:"P"},
+  "sp1":{name:"موقف المدربين والموظفين الأول",dept:"مواقف المدربين والموظفين",gps:[31.3933409,37.3124819],clr:"#8e44ad",icon:"P"},
+  "sp2":{name:"موقف المدربين والموظفين الثاني",dept:"مواقف المدربين والموظفين",gps:[31.3889809,37.3087794],clr:"#8e44ad",icon:"P"},
 };
 const KW_POI={
-  "موقف شمالي":"p1","موقف المتدربين الشمالي":"p1",
-  "موقف جنوبي":"p2","موقف المتدربين الجنوبي":"p2",
-  "موقف المتدربين":"parking_choice","مواقف المتدربين":"parking_choice",
-  "موقف الموظفين":"parking_choice","موقف الإداريين":"parking_choice","موقف المدربين":"parking_choice",
-  "موقف":"parking_choice","مواقف":"parking_choice","باركينج":"parking_choice","ركن":"parking_choice",
-  "بوابة المتدربين":"g1","دخول المتدربين":"g1","مدخل المتدربين":"g1",
-  "بوابة الإداريين":"g2","إداريين":"g2","موظفين":"g2",
-  "بوابة":"g1","مدخل":"g1",
+  "موقف المتدربين الشمالي":"p1","موقف شمالي":"p1",
+  "موقف المتدربين الجنوبي":"p2","موقف جنوبي":"p2",
+  "موقف المدربين الأول":"sp1","موقف الموظفين الأول":"sp1",
+  "موقف المدربين الثاني":"sp2","موقف الموظفين الثاني":"sp2",
+  "موقف المتدربين":"parking_student","مواقف المتدربين":"parking_student",
+  "موقف المدربين":"parking_staff","مواقف المدربين":"parking_staff",
+  "موقف الموظفين":"parking_staff","مواقف الموظفين":"parking_staff",
+  "موقف الإداريين":"parking_staff","مواقف الإداريين":"parking_staff",
+  "موقف":"parking_student","مواقف":"parking_student","باركينج":"parking_student","ركن":"parking_student",
 };
 const LM=111000,LG=111000*Math.cos(CC[0]*Math.PI/180);
 function toXZ(g){return{x:(g[1]-CC[1])*LG,z:-(g[0]-CC[0])*LM};}
@@ -435,20 +436,21 @@ function resetCardMode(){
   document.getElementById('parkChoices').style.display='none';
 }
 
-function showParkingChoice(){
+function showParkingChoice(pids,label,clr){
   isNav=false;arrived=false;dest=null;
   document.getElementById('statusBar').style.display='none';
   const ne=document.getElementById('icnum');
-  ne.textContent='P';ne.style.background='#2980b922';ne.style.color='#2980b9';ne.style.border='2px solid #2980b944';
-  document.getElementById('icname').textContent='مواقف السيارات';
+  ne.textContent='P';ne.style.background=clr+'22';ne.style.color=clr;ne.style.border='2px solid '+clr+'44';
+  document.getElementById('icname').textContent=label;
   document.getElementById('iccat').textContent='اختر الموقف المناسب';
   document.getElementById('icdet').innerHTML='موقفان متاحان — اضغط أحدهما للانطلاق فوراً';
   document.getElementById('mdist').textContent='—';document.getElementById('meta').textContent='—';
-  ['p1','p2'].forEach((pid,i)=>{
+  pids.forEach((pid,i)=>{
     const p=POI[pid],btn=document.getElementById(`pchoice${i+1}`);
     let dist='';
     if(lastGPS&&map){const d=map.distance(lastGPS,p.gps);dist=`<div class="pcdist">${Math.round(d)} م &bull; ~${Math.max(1,Math.round(d/WS))} د مشياً</div>`;}
     btn.innerHTML=`<div class="pclabel">${p.name}</div>${dist}`;
+    btn.onclick=()=>window.pickParking(pid);
   });
   document.getElementById('gobtn').style.display='none';
   document.getElementById('parkChoices').style.display='flex';
@@ -462,7 +464,8 @@ function pickParking(pid){
 }
 
 function executePOI(pid){
-  if(pid==='parking_choice'){showParkingChoice();return;}
+  if(pid==='parking_student'){showParkingChoice(['p1','p2'],'مواقف المتدربين','#2980b9');return;}
+  if(pid==='parking_staff'){showParkingChoice(['sp1','sp2'],'مواقف المدربين والموظفين','#8e44ad');return;}
   const p=POI[pid];if(!p)return;
   isNav=false;arrived=false;dest={poiId:pid,poi:p};
   document.getElementById('statusBar').style.display='none';
